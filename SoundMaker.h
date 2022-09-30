@@ -149,7 +149,7 @@ public:
 		((SoundMaker*)dwInstance)->waveOutProc(hWaveOut, uMsg, dwParam1, dwParam2);
 	}
 
-	void SetUserFunction(double(*func)(double))
+	void SetUserFunction(double(func)(double))
 	{
 		userFunction = func;
 	}
@@ -208,6 +208,7 @@ private:
 			int current = n_BlockCurrent * n_BlockSamples;
 
 			for (unsigned int i = 0; i < n_BlockSamples; i++) {
+				//cout << userFunction << endl;
 				if (userFunction == nullptr) {
 					newSample = (T)(clip(UserProcess(m_dGlobalTime), 1.0) * dMaxSample);
 				}
