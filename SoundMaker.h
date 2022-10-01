@@ -164,7 +164,7 @@ public:
 
 	double GetTime()
 	{
-		return m_dGlobalTime;
+		return &m_dGlobalTime;
 	}
 
 	// Override to process current sample
@@ -174,11 +174,10 @@ public:
 	}
 
 
-
 private:
 	double(*userFunction)(double);
 	atomic<unsigned int> nBlockFree;
-	atomic<double> m_dGlobalTime;
+	double m_dGlobalTime;
 	mutex BlockNotZero;
 	condition_variable cvBlockNotZero;
 	unsigned int n_BlockCurrent;
