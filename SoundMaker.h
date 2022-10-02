@@ -164,7 +164,7 @@ public:
 
 	double GetTime()
 	{
-		return &m_dGlobalTime;
+		return m_dGlobalTime;
 	}
 
 	// Override to process current sample
