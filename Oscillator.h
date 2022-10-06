@@ -21,6 +21,8 @@ private:
 
 	bool onKey;
 
+
+
 	double SineWave(double frequency, double time) {
 		return sin(frequency * 2.0 * M_PI * time);
 	}
@@ -37,13 +39,32 @@ private:
 		return SineWave((double)(rand() % 10000 + 100), time);
 	}
 
+public:
+	Oscillator() {
+		this->amplitude = 0.3;
+		this->frequency = 440.0;
+		this->osc_type = 1;
+		this->isEnveloping = true;
+
+		this->maxLevel = 0.3;
+		this->attackTime = 0.1;
+		this->decayTime = 0.0;
+		this->sustainLevel = 0.3;
+		this->releaseTime = 0.4;
+		this->onTime = 0.0;
+		this->offTime = 0.0;
+		this->onKey = false;
+
+	}
+
 	double getEnvelope(double timeNow) {
 		double currentAmplitude = 0.0;
 		double envelopeTime = timeNow - this->onTime;
 
-
 		if (this->onKey) {
+
 			if (this->isEnveloping) {
+
 				if (envelopeTime <= this->attackTime)
 				{
 					currentAmplitude = (envelopeTime / this->attackTime) * this->maxLevel;
@@ -76,24 +97,6 @@ private:
 		return currentAmplitude;
 	}
 
-public:
-	Oscillator() {
-		this->amplitude = 0.3;
-		this->frequency = 440.0;
-		this->osc_type = 1;
-		this->isEnveloping = true;
-
-		this->maxLevel = 0.3;
-		this->attackTime = 0.1;
-		this->decayTime = 0.0;
-		this->sustainLevel = 0.3;
-		this->releaseTime = 0.4;
-		this->onTime = 0.0;
-		this->offTime = 0.0;
-		this->onKey = false;
-
-	}
-
 	void setEnvelope(bool isEnveloping, double maxLevel = 0.0, double A_time = 0.1, double D_time = 0.1, double S_level = 0.0, double R_time = 0.1) {
 		this->isEnveloping = isEnveloping;
 		if (isEnveloping) {
@@ -109,6 +112,10 @@ public:
 		this->amplitude = amp;
 	}
 
+	double getAmplitude() {
+		return this->amplitude;
+	}
+
 	void On(double time) {
 		this->onTime = time;
 		this->onKey = true;
@@ -117,7 +124,6 @@ public:
 	void Off(double time) {
 		this->offTime = time;
 		this->onKey = false;
-
 	}
 
 	void setFrequency(double hz) {
@@ -138,7 +144,7 @@ public:
 			return SineWave(frequency, time) * this->getEnvelope(time);
 			break;
 		case 2:
-			return TriangleWave(frequency, time) * this->getEnvelope(time);
+			return TriangleWave(frequency, time);
 			break;
 		case 3:
 			return SquareWave(frequency, time) * this->getEnvelope(time);

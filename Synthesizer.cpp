@@ -3,18 +3,20 @@ using namespace std;
 
 #include "SoundMaker.h"
 #include "Oscillator.h"
+#include "Note.h"
+#include "Output.h"
 
 vector<wstring> devices = SoundMaker<short>::ListDevices();
 SoundMaker<short>* sound;
 int oscillator_type = 0;
 Oscillator* osc;
-bool pressed;
-int key = -1;
+Output* output;
+vector<Note> note;
+
 
 void loadSoundMaker() {
-
+	short num = 0;
 	for (auto d : devices) {
-		short num = 0;
 		wcout << "Kimeneti eszközök: " << endl << num << ". " << d << endl;
 		num++;
 	}
@@ -25,11 +27,17 @@ void loadSoundMaker() {
 	
 
 	cout << "Oscillator types: \n 1 - Sine \n 2 - Triangle \n 3 - Square \n 4 - Pink Noise" << endl;
-	cout << "Oszcillate this: " && cin >> oscillator_type;
+	cout << "Oscillate this: " && cin >> oscillator_type;
 }
 
 double wrapper(double time) {
-	return (osc->oscillate(time, osc->getFrequency(), oscillator_type));
+	double mix = 0.0;
+
+	for (auto n : note) {
+		mix += osc->oscillate(time, n.freq, oscillator_type) * osc->getEnvelope(time);
+	}
+
+	return mix;
 }
 
 int main()
@@ -38,28 +46,12 @@ int main()
 	sound->SetUserFunction(wrapper);
 
 	cout << "Play now!";
-	osc->setEnvelope(true, 0.5, 0.1, 0.0, 0.5, 0.3);
-	while (1) {
-		
-		pressed = false;
-		for (int i = 0; i < 16; i++) {
-			if (GetAsyncKeyState((unsigned char)"AWSEDFTGZHUJK"[i]) & 0x8000) {
-				if (key != i) {
-					osc->setFrequency(440.0 * pow(pow(2.0, 1.0 / 12.0), i));
-					osc->On(sound->GetTime());
-					//osc->setAmplitude(0.3, sound->GetTime());
-					key = i;
-				}
-				pressed = true;
-			}
-		}
-		if (!pressed) {
-			if (key != -1) {
-				osc->Off(sound->GetTime());
-				key = -1;
-			}
-		}
-	}
+	osc->setEnvelope(true, 0.5, 0.2, 0.0, 0.5, 0.3);
+
+	output->InputProcessWithPolyphony(&note, *osc, *sound);
+
+
+	
 
 	return 0;
 }

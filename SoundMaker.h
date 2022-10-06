@@ -19,6 +19,7 @@ class SoundMaker
 {
 private:
 	HWAVEOUT hwaveout;
+
 	//on_xxx = 'ObjectNormal_xxx' variable
 	//op_xxx = 'ObjectPointer_xxx' variable
 	unsigned int n_sampleRate;
