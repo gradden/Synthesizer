@@ -28,7 +28,7 @@ private:
 	}
 
 	double TriangleWave(double frequency, double time) {
-		return asin(SineWave(frequency, time));
+		return (asin(SineWave(frequency, time)));
 	}
 
 	double SquareWave(double frequency, double time) {
@@ -37,6 +37,16 @@ private:
 
 	double PinkNoise(double time) {
 		return SineWave((double)(rand() % 10000 + 100), time);
+	}
+
+	double SawtoothWave(double frequency, double time) {
+		double mix = 0.0;
+
+		for (double i = 1.0; i < 30.0; i++) {
+			mix += (sin(i * 2.0 * M_PI * frequency * time)) / i;
+		}
+
+		return mix;
 	}
 
 public:
@@ -85,6 +95,7 @@ public:
 		else {
 			if (this->isEnveloping) {
 				currentAmplitude = ((timeNow - this->offTime) / this->releaseTime) * (0.0 - this->sustainLevel) + this->sustainLevel;
+
 				if (currentAmplitude < 0.01) {
 					currentAmplitude = 0.0;
 				}
@@ -94,6 +105,7 @@ public:
 			}
 		}
 
+		this->amplitude = currentAmplitude;
 		return currentAmplitude;
 	}
 
@@ -106,6 +118,10 @@ public:
 			this->sustainLevel = S_level;
 			this->releaseTime = R_time;
 		}
+	}
+
+	bool isEnvelopeEnabled() {
+		return this->isEnveloping;
 	}
 
 	void setAmplitude(double amp) {
@@ -144,13 +160,16 @@ public:
 			return SineWave(frequency, time) * this->getEnvelope(time);
 			break;
 		case 2:
-			return TriangleWave(frequency, time);
+			return TriangleWave(frequency, time) * this->getEnvelope(time);
 			break;
 		case 3:
 			return SquareWave(frequency, time) * this->getEnvelope(time);
 			break;
 		case 4:
 			return PinkNoise(time) * this->getEnvelope(time);
+			break;
+		case 5:
+			return SawtoothWave(frequency, time) * this->getEnvelope(time);
 			break;
 		}
 	}

@@ -15,10 +15,9 @@ class Output {
 private:
 	string method;
 
-
 public:
 
-	void InputProcessWithPolyphony(vector<Note>* note, Oscillator& osc, SoundMaker<short>& sound) {
+	void static InputProcessWithPolyphony(vector<Note>* note, Oscillator& osc, SoundMaker<short>& sound) {
 		while (1) {
 			for (int i = 0; i < 16; i++) {
 
@@ -31,27 +30,35 @@ public:
 						n.freq = 440.0 * pow(pow(2.0, 1.0 / 12.0), i);
 						n.active = true;
 						osc.On(sound.GetTime());
-						
-
-						if (iterator == note->end()) {
-							note->emplace_back(n);
-						}
+						note->push_back(n);
 					}
 
 				}
 				else {
+				
 					if (!(GetAsyncKeyState((unsigned char)"AWSEDFTGZHUJK"[i]) & 0x8000)) {
-						for (vector<Note>::iterator it = note->begin(); it != note->end(); ++it) {
-							if (i == it->noteId) {
-								note->erase(it);
-								break;
+						if (iterator != note->end()) {
+							if (osc.isEnvelopeEnabled()) {
+								osc.Off(sound.GetTime());
+								while (osc.getAmplitude() > 0.01) {}
+							}	
+							for (vector<Note>::iterator it = note->begin(); it != note->end(); ++it) {
+								if (i == it->noteId) {
+									note->erase(it);
+									break;
+								}
 							}
 						}
-						osc.Off(sound.GetTime());
 					}
 				}
+
+				for (int i = 0; i < note->size(); i++) {
+					wcout << " " << note->at(i).noteId;
+				}
+				cout << endl;
+				this_thread::sleep_for(5ms);
 			}
-			this_thread::sleep_for(5ms);
+			
 		}
 	}
 
