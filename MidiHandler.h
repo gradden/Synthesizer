@@ -19,64 +19,69 @@ public:
 	void midiWrapper(HMIDIIN hMidiIn, UINT wMsg, DWORD_PTR dwParam1, DWORD_PTR dwParam2) {
 		switch (wMsg) {
 		case MIM_OPEN:
-			printf("wMsg=MIM_OPEN\n");
+			printf("wMsg=MIDI Message channel has been opened.\n");
 			break;
 		case MIM_CLOSE:
-			printf("wMsg=MIM_CLOSE\n");
+			printf("wMsg=MIDI Message channel has been closed.\n");
 			break;
 		case MIM_DATA:
-			//sprintf("0x%08X 0x%02X 0x%02X 0x%02X\r\n", dwParam2, dwParam1 & 0x000000FF, (dwParam1 >> 8) & 0x000000FF, (dwParam1 >> 16) & 0x000000FF);
-			//break;
-			//cout << "NOTE: " << note << endl;
-			//cout << "ON / OFF :" << keyPressed << endl;
 			this->midiMsgKeyboardParser(dwParam1);
-			//printf("wMsg=MIM_DATA, dwParam1=%08x, dwParam2=%08x\n", dwParam1, dwParam2);
 			break;
 		case MIM_LONGDATA:
-			printf("wMsg=MIM_LONGDATA\n");
+			printf("wMsg=MIDI Message longdata received.\n");
 			break;
 		case MIM_ERROR:
-			printf("wMsg=MIM_ERROR\n");
+			printf("wMsg=MIDI Message error.\n");
 			break;
 		case MIM_LONGERROR:
-			printf("wMsg=MIM_LONGERROR\n");
+			printf("wMsg=MIDI Message long error.\n");
 			break;
 		case MIM_MOREDATA:
-			printf("wMsg=MIM_MOREDATA\n");
+			printf("wMsg=MIDI Message more data.\n");
 			break;
 		default:
-			printf("wMsg = unknown\n");
+			printf("wMsg = Unknown\n");
 			break;
 		}
 		return;
 	}
 
-	void listMidiDevices() {
-		unsigned int numDevs = midiInGetNumDevs();
-		cout << numDevs << " MIDI devices connected:" << endl;
+	void initMidiDevice() {
+		int MidiDevicesCount = midiInGetNumDevs();
+		cout << MidiDevicesCount << " MIDI devices connected:" << endl;
 
-		MIDIINCAPS inputCapabilities;
-		for (unsigned int i = 0; i < numDevs; i++) {
-			midiInGetDevCaps(i, &inputCapabilities, sizeof(inputCapabilities));
-			cout << "[" << i << "] " << inputCapabilities.szPname << endl;
+		MIDIINCAPS MidiInCaps;
+		for (unsigned int i = 0; i < MidiDevicesCount; i++) {
+			midiInGetDevCaps(i, &MidiInCaps, sizeof(MIDIINCAPS));
+			cout << i << " - " << MidiInCaps.szPname << endl;
 		}
 
-		int portID;
-		cout << "Enter the port which you want to connect to: ";
-		cin >> portID;
-		cout << "Trying to connect with the device on port " << portID << "..." << endl;
+		int DeviceID;
+		cout << "Choose MIDI Device:" && cin >> DeviceID;
 
-		LPHMIDIIN device = new HMIDIIN[numDevs];
-		int flag = midiInOpen(&device[portID], portID, (DWORD_PTR)midiInputCallback, (DWORD_PTR)this, CALLBACK_FUNCTION);
-
-		if (flag != MMSYSERR_NOERROR) {
-			cout << "Error opening MIDI port." << endl;
+		LPHMIDIIN device = new HMIDIIN[MidiDevicesCount];
+		if (midiInOpen(&device[DeviceID], DeviceID, (DWORD_PTR)midiInputCallback, (DWORD_PTR)this, CALLBACK_FUNCTION) == S_OK) {
+			cout << "Connected to " << DeviceID << ". MIDI device!" << endl;
+			midiInStart(device[DeviceID]);
 		}
 		else {
-			cout << "You are now connected to port " << portID << "!" << endl;
-			midiInStart(device[portID]);
+			cout << "MIDI connecting failed" << endl;
 		}
 	}
+
+	bool getKeyPressedState() {
+		return this->pressed;
+	}
+
+	int getNote() {
+		return this->midiNote;
+	}
+
+	int getChannel() {
+		return this->midiChannel;
+	}
+
+
 
 private:
 	bool pressed;
@@ -119,7 +124,8 @@ private:
 		msgHex << std::hex << (midiMsg & 0x0000FFFF);
 
 		string msgBin = this->hex_str_to_bin_str(msgHex.str());
-		if (msgBin.size() == 16) {
+
+		if (msgBin.substr(8, 4) == "1001" || msgBin.substr(8, 4) == "1000") {
 			string midiKeyPressed = msgBin.substr(8, 4);
 			midiKeyPressed == "1000" ? this->pressed = false : this->pressed = true;
 
@@ -128,10 +134,6 @@ private:
 
 			string midiChannel = msgBin.substr(12, 4);
 			this->midiChannel = stoi(midiChannel, nullptr, 2);
-
-			cout << "NOTE:" << this->midiNote << endl;
-			cout << "KeyPressed:" << this->pressed << endl;
-			cout << "Channel:" << this->midiChannel << endl;
 		}
 	}
 };
