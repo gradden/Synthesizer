@@ -17,6 +17,7 @@ Oscillator* osc;
 Output* output;
 vector<Note> note;
 MidiHandler* midihandler = new MidiHandler();
+mutex muxNotes;
 
 void loadMidi() {
 	midihandler->initMidiDevice();
@@ -41,8 +42,7 @@ void loadMidi() {
 		if (!midihandler->getKeyPressedState() && notesArray[midihandler->getNote()] == true) {
 			notesArray[midihandler->getNote()] = false;
 			int noteId = midihandler->getNote();
-			auto it = find_if(note.begin(), note.end(), [&noteId](const Note& obj) {return obj.noteId == noteId; });
-
+			auto it = find_if(note.begin(), note.end(), [&noteId](const Note& obj) {return obj.active && obj.noteId == noteId; });
 			osc->Off(sound->GetTime());
 			while (it->amplitude >= 0.01) {
 				it->amplitude = osc->getAmplitude();
@@ -74,7 +74,7 @@ void playOnKeyboard() {
 	cout << "Play now!";
 	while (1) {
 		for (int i = 0; i < 16; i++) {
-
+			
 			auto iterator = find_if(note.begin(), note.end(), [&i](const Note& obj) {return obj.noteId == i; });
 
 			if (iterator == note.end()) {
@@ -105,7 +105,9 @@ void playOnKeyboard() {
 					note.erase(iterator);
 				}
 			}
+			
 		}
+		
 		this_thread::sleep_for(5ms);
 	}
 }
@@ -121,7 +123,7 @@ void loadSoundMaker() {
 	osc = new Oscillator();
 
 
-	cout << "Oscillator types: \n 1 - Sine \n 2 - Triangle \n 3 - Square \n 4 - Pink Noise" << endl;
+	cout << "Oscillator types: \n 1 - Sine \n 2 - Triangle \n 3 - Square \n 4 - Pink Noise \n 5 - Sawtooth" << endl;
 	cout << "Oscillate this: " && cin >> oscillator_type;
 
 	cout << "Choose input method: \n 1 - Keyboard \n 2 - MIDI" << endl;
@@ -129,6 +131,7 @@ void loadSoundMaker() {
 }
 
 double wrapper(double time) {
+	unique_lock<mutex> lm(muxNotes);
 	MasterMix = 0.0;
 
 	for (auto n : note) {
@@ -142,9 +145,20 @@ int main()
 {
 	loadSoundMaker();
 	sound->SetUserFunction(wrapper);
-	osc->setEnvelope(true, 0.1, 0.2, 0.1, 0.2, 0.2);
+	//osc->setEnvelope(true, 0.1, 0.2, 0.1, 0.2, 0.2);
+	osc->setEnvelope(true, 0.1, 0.001, 0.3, 0.0, 0.2);
+	
+	
 
-	playMode == 1 ? playOnKeyboard() : loadMidi();
+	if (playMode == 1) {
+		//thread KeyboardProcess = thread(playOnKeyboard);
+		//KeyboardProcess.join();
+		playOnKeyboard();
+	}
+	else if (playMode == 2) {
+		thread MidiProcess = thread(loadMidi);
+		MidiProcess.join();
+	}
 
 	return 0;
 }

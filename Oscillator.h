@@ -42,7 +42,7 @@ private:
 	double SawtoothWave(double frequency, double time) {
 		double mix = 0.0;
 
-		for (double i = 1.0; i < 30.0; i++) {
+		for (double i = 1.0; i < 100.0; i++) {
 			mix += (sin(i * 2.0 * M_PI * frequency * time)) / i;
 		}
 

@@ -53,7 +53,7 @@ public:
 		MIDIINCAPS MidiInCaps;
 		for (unsigned int i = 0; i < MidiDevicesCount; i++) {
 			midiInGetDevCaps(i, &MidiInCaps, sizeof(MIDIINCAPS));
-			cout << i << " - " << MidiInCaps.szPname << endl;
+			cout << i << " - " << this->charToString(MidiInCaps.szPname) << endl;
 		}
 
 		int DeviceID;
@@ -87,6 +87,15 @@ private:
 	bool pressed;
 	int midiChannel;
 	int midiNote;
+
+	string charToString(WCHAR chars[]) {
+		string s;
+		for (int i = 0; i <= 32; i++) {
+			s += chars[i];
+		}
+
+		return s;
+	}
 
 	const char* hex_to_bin(char c) {
 		switch (toupper(c))
