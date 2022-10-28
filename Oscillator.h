@@ -2,6 +2,7 @@
 #define _USE_MATH_DEFINES
 
 #include<math.h>
+#include <stdlib.h>
 
 class Oscillator {
 private:
@@ -20,8 +21,6 @@ private:
 	double releaseTime;
 
 	bool onKey;
-
-
 
 	double SineWave(double frequency, double time) {
 		return sin(frequency * 2.0 * M_PI * time);
@@ -64,113 +63,20 @@ public:
 		this->onTime = 0.0;
 		this->offTime = 0.0;
 		this->onKey = false;
-
 	}
 
-	double getEnvelope(double timeNow) {
-		double currentAmplitude = 0.0;
-		double envelopeTime = timeNow - this->onTime;
+	double getEnvelope(double timeNow);
+	void setEnvelope(bool isEnveloping, double maxLevel, double A_time, double D_time, double S_level, double R_time);
+	bool isEnvelopeEnabled();
 
-		if (this->onKey) {
+	void setAmplitude(double amp);
+	double getAmplitude();
 
-			if (this->isEnveloping) {
+	void On(double time);
+	void Off(double time);
 
-				if (envelopeTime <= this->attackTime)
-				{
-					currentAmplitude = (envelopeTime / this->attackTime) * this->maxLevel;
-				}
+	void setFrequency(double hz);
+	double getFrequency();
 
-				if (envelopeTime > this->attackTime && envelopeTime <= (this->attackTime + this->decayTime)) {
-					currentAmplitude = (this->sustainLevel - this->maxLevel) + this->maxLevel * ((envelopeTime - this->attackTime) / this->decayTime);
-				}
-
-				if (envelopeTime > (this->attackTime + this->decayTime)) {
-					currentAmplitude = this->sustainLevel;
-				}
-			}
-			else {
-				return this->amplitude;
-			}
-		}
-		else {
-			if (this->isEnveloping) {
-				currentAmplitude = ((timeNow - this->offTime) / this->releaseTime) * (0.0 - this->sustainLevel) + this->sustainLevel;
-
-				if (currentAmplitude < 0.01) {
-					currentAmplitude = 0.0;
-				}
-			}
-			else {
-				return 0.0;
-			}
-		}
-
-		this->amplitude = currentAmplitude;
-		return currentAmplitude;
-	}
-
-	void setEnvelope(bool isEnveloping, double maxLevel = 0.0, double A_time = 0.1, double D_time = 0.1, double S_level = 0.0, double R_time = 0.1) {
-		this->isEnveloping = isEnveloping;
-		if (isEnveloping) {
-			this->maxLevel = maxLevel;
-			this->attackTime = A_time;
-			this->decayTime = D_time;
-			this->sustainLevel = S_level;
-			this->releaseTime = R_time;
-		}
-	}
-
-	bool isEnvelopeEnabled() {
-		return this->isEnveloping;
-	}
-
-	void setAmplitude(double amp) {
-		this->amplitude = amp;
-	}
-
-	double getAmplitude() {
-		return this->amplitude;
-	}
-
-	void On(double time) {
-		this->onTime = time;
-		this->onKey = true;
-	}
-
-	void Off(double time) {
-		this->offTime = time;
-		this->onKey = false;
-	}
-
-	void setFrequency(double hz) {
-		this->frequency = hz;
-	}
-	
-	double getFrequency() {
-		return this->frequency;
-	}
-
-	double oscillate(double time, double frequency, int osc) {
-		switch (osc)
-		{
-		default:
-			return 0.0;
-			break;
-		case 1:
-			return SineWave(frequency, time) * this->getEnvelope(time);
-			break;
-		case 2:
-			return TriangleWave(frequency, time) * this->getEnvelope(time);
-			break;
-		case 3:
-			return SquareWave(frequency, time) * this->getEnvelope(time);
-			break;
-		case 4:
-			return PinkNoise(time) * this->getEnvelope(time);
-			break;
-		case 5:
-			return SawtoothWave(frequency, time) * this->getEnvelope(time);
-			break;
-		}
-	}
+	double oscillate(double time, double frequency, int osc);
 };

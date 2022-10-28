@@ -72,42 +72,44 @@ void loadMidi() {
 
 void playOnKeyboard() {
 	cout << "Play now!";
+
+	bool pressed[16] = { false };
+
 	while (1) {
 		for (int i = 0; i < 16; i++) {
-			
+
 			auto iterator = find_if(note.begin(), note.end(), [&i](const Note& obj) {return obj.noteId == i; });
 
 			if (iterator == note.end()) {
-				if (GetAsyncKeyState((unsigned char)"AWSEDFTGZHUJK"[i]) & 0x8000) {
-					Note n{};
-					n.noteId = i;
-					n.freq = 440.0 * pow(pow(2.0, 1.0 / 12.0), i);
-					n.active = true;
-					n.amplitude = osc->getAmplitude();
+				if ((GetAsyncKeyState((unsigned char)"AWSEDFTGZHUJK"[i]) & 0x8000)) {
+					if (pressed[i] == false) {
+						Note n{};
+						n.noteId = i;
+						n.freq = 440 * pow(2.0, (double)i / 12.0);
+						n.active = true;
+						n.amplitude = osc->getAmplitude();
 
-					note.emplace_back(n);
+						pressed[i] = true;
+						note.emplace_back(n);
 
-					osc->On(sound->GetTime());
+						osc->On(sound->GetTime());
+					}
 				}
 			}
 			else {
-				//cout << iterator->noteId << endl;
-				if (iterator->active) {
-					if (!(GetAsyncKeyState((unsigned char)"AWSEDFTGZHUJK\xbcL\xbe\xbf"[i]) & 0x8000)) {
-						osc->Off(sound->GetTime());
-						while (osc->getAmplitude() >= 0.01) {
-							iterator->amplitude = osc->getAmplitude();
-						}
-						iterator->active = false;
-					}
-				}
-				else {
+				if (!(GetAsyncKeyState((unsigned char)"AWSEDFTGZHUJK\xbcL\xbe\xbf"[i]) & 0x8000) && pressed[i]) {
+					osc->Off(sound->GetTime());
+					pressed[i] = false;
+					iterator->active = false;
 					note.erase(iterator);
 				}
+					
 			}
+			cout << note.size() << endl;
+			
 			
 		}
-		
+
 		this_thread::sleep_for(5ms);
 	}
 }
@@ -137,7 +139,7 @@ double wrapper(double time) {
 	for (auto n : note) {
 		MasterMix += osc->oscillate(time, n.freq, oscillator_type);
 	}
-	//cout << "Value: " << mix << " || Time: " << time << endl;
+	
 	return MasterMix;
 }
 
@@ -145,11 +147,9 @@ int main()
 {
 	loadSoundMaker();
 	sound->SetUserFunction(wrapper);
-	//osc->setEnvelope(true, 0.1, 0.2, 0.1, 0.2, 0.2);
-	osc->setEnvelope(true, 0.1, 0.001, 0.3, 0.0, 0.2);
+	osc->setEnvelope(true, 0.1, 0.2, 0.1, 0.2, 0.2);
+	//osc->setEnvelope(true, 0.1, 0.001, 0.3, 0.0, 0.2);
 	
-	
-
 	if (playMode == 1) {
 		//thread KeyboardProcess = thread(playOnKeyboard);
 		//KeyboardProcess.join();

@@ -20,8 +20,6 @@ class SoundMaker
 private:
 	HWAVEOUT hwaveout;
 
-	//on_xxx = 'ObjectNormal_xxx' variable
-	//op_xxx = 'ObjectPointer_xxx' variable
 	unsigned int n_sampleRate;
 	unsigned int n_channel;
 	unsigned int n_BlockCount;
@@ -127,8 +125,6 @@ public:
 		unique_lock<mutex> lm(BlockNotZero);
 		cvBlockNotZero.notify_one();
 
-		//SoundCardThread.join();
-
 		return true;
 
 		
@@ -144,7 +140,6 @@ public:
 		cvBlockNotZero.notify_one();
 	}
 
-	// Static wrapper for sound card handler
 	static void CALLBACK waveOutProcWrap(HWAVEOUT hWaveOut, UINT uMsg, DWORD dwInstance, DWORD dwParam1, DWORD dwParam2)
 	{
 		((SoundMaker*)dwInstance)->waveOutProc(hWaveOut, uMsg, dwParam1, dwParam2);
@@ -168,7 +163,6 @@ public:
 		return m_dGlobalTime;
 	}
 
-	// Override to process current sample
 	virtual double UserProcess(double dTime)
 	{
 		return 0.0;
@@ -208,7 +202,6 @@ private:
 			int current = n_BlockCurrent * n_BlockSamples;
 
 			for (unsigned int i = 0; i < n_BlockSamples; i++) {
-				//cout << userFunction << endl;
 				if (userFunction == nullptr) {
 					newSample = (T)(clip(UserProcess(m_dGlobalTime), 1.0) * dMaxSample);
 				}
