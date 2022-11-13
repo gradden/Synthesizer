@@ -34,8 +34,6 @@ void MidiHandler::midiWrapper(HMIDIIN hMidiIn, UINT wMsg, DWORD_PTR dwParam1, DW
 	return;
 }
 
-
-
 void MidiHandler::initMidiDevice() {
 	int MidiDevicesCount = midiInGetNumDevs();
 	cout << MidiDevicesCount << " MIDI devices connected:" << endl;

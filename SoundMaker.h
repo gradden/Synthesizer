@@ -31,8 +31,6 @@ private:
 	T* p_MemoryUnit;
 	WAVEHDR *wavehdr;
 
-
-
 public:
 	SoundMaker(wstring device, unsigned int sampleRate = 44100, unsigned int channel = 1, unsigned int blocks = 8, unsigned int blockSamples = 512) {
 		MakeHDR(device, sampleRate, channel, blocks, blockSamples);
@@ -53,7 +51,6 @@ public:
 	}
 
 	static vector<wstring> ListDevices() {
-
 		int DeviceCount = waveOutGetNumDevs();
 		vector<wstring> devices;
 		WAVEOUTCAPS woc;
@@ -93,7 +90,7 @@ public:
 			wfx.wBitsPerSample = sizeof(T) * 8;
 			wfx.nBlockAlign = (wfx.wBitsPerSample / 8) * wfx.nChannels;
 			wfx.nAvgBytesPerSec = wfx.nSamplesPerSec * wfx.nBlockAlign;
-			wfx.cbSize = 0; //WAVE_FORMAT_PCM esetén 0 extra bitet tartalmaz a headers
+			wfx.cbSize = 0;
 
 			if (waveOutOpen(&hwaveout, deviceID, &wfx, (DWORD_PTR)waveOutProcWrap, (DWORD_PTR)this, CALLBACK_FUNCTION) != S_OK) {
 				cout << "Failed to open soundcard";
@@ -130,7 +127,6 @@ public:
 		
 	}
 
-	// Handler for soundcard request for more data
 	void waveOutProc(HWAVEOUT hWaveOut, UINT uMsg, DWORD dwParam1, DWORD dwParam2)
 	{
 		if (uMsg != WOM_DONE) return;
@@ -182,7 +178,6 @@ private:
 		m_dGlobalTime = 0.0;
 		double dTimeStep = 1.0 / (double)n_sampleRate;
 
-		// Goofy hack to get maximum integer for a type at run-time
 		T nMaxSample = (T)pow(2, (sizeof(T) * 8) - 1) - 1;
 		double dMaxSample = (double)nMaxSample;
 

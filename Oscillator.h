@@ -20,7 +20,12 @@ private:
 	double sustainLevel;
 	double releaseTime;
 
+	double whiteNoiseMinFreq;
+	double whiteNoiseMaxFreq;
+
 	bool onKey;
+	bool playWithVelocity;
+	short velocity;
 
 	double SineWave(double frequency, double time) {
 		return sin(frequency * 2.0 * M_PI * time);
@@ -34,8 +39,10 @@ private:
 		return SineWave(frequency, time) > 0.0 ? 1.0 : 0.0;
 	}
 
-	double PinkNoise(double time) {
-		return SineWave((double)(rand() % 10000 + 100), time);
+	double WhiteNoise(double time, double min, double max) {
+		double r = (double)rand() / RAND_MAX;
+
+		return SineWave((min + r * (max-min)), time);
 	}
 
 	double SawtoothWave(double frequency, double time) {
@@ -49,21 +56,8 @@ private:
 	}
 
 public:
-	Oscillator() {
-		this->amplitude = 0.3;
-		this->frequency = 440.0;
-		this->osc_type = 1;
-		this->isEnveloping = true;
+	Oscillator();
 
-		this->maxLevel = 0.3;
-		this->attackTime = 0.1;
-		this->decayTime = 0.0;
-		this->sustainLevel = 0.3;
-		this->releaseTime = 0.4;
-		this->onTime = 0.0;
-		this->offTime = 0.0;
-		this->onKey = false;
-	}
 
 	double getEnvelope(double timeNow);
 	void setEnvelope(bool isEnveloping, double maxLevel, double A_time, double D_time, double S_level, double R_time);
@@ -75,8 +69,15 @@ public:
 	void On(double time);
 	void Off(double time);
 
+	void setVelocityPressure(short value);
+	void setVelocity(bool velocity);
+
 	void setFrequency(double hz);
 	double getFrequency();
+
+	void setWhiteNoiseFreqScale(double& min, double& max);
+	double getWhiteNoiseMinFreq();
+	double getWhiteNoiseMaxFreq();
 
 	double oscillate(double time, double frequency, int osc);
 };

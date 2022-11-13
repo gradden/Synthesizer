@@ -6,18 +6,53 @@ using namespace std;
 #include "Note.h"
 #include "Output.h"
 #include "MidiHandler.h"
+#include "Filter.h"
+
+const short SINE_WAVE = 1;
+const short TRIANGLE_WAVE = 2;
+const short SQUARE_WAVE = 3;
+const short WHITE_NOISE = 4;
+const short SAWTOOTH_WAVE = 5;
+
+const short PLAYMODE_KEYBOARD = 1;
+const short PLAYMODE_MIDI = 2;
+
+const int DEFAULT_SAMPLE_RATE = 44100;
+const short DEFAULT_OUTPUT_MODE = 1;
+const short DEFAULT_BLOCK_COUNT = 8;
+const int DEFAULT_BLOCK_SAMPLE = 512;
+
+const double ADSR_MAX_VALUE = 0.1;
+const double ADSR_ATTACK_TIME = 0.2;
+const double ADSR_DECAY_TIME = 0.1;
+const double ADSR_SUSTAIN_LEVEL = 0.1;
+const double ADSR_RELEASE_TIME = 0.1;
+
+const double BASE_KEYBOARD_FREQUENCY = 440.0;
+const double BASE_MIDI_FREQUENCY = 8.1758;
+
+const int LPO_TAPS = 50;
+const double LPO_CUTOFF_FREQUENCY = 150.0;
+
+bool filterEnabled = false;
+bool isEnvelope = false;
+
+short oscillator_type = TRIANGLE_WAVE;
+short playMode = DEFAULT_OUTPUT_MODE;
+short soundcard = 0;
+
+double MasterMix = 0.0;
+
+char answer;
 
 vector<wstring> devices = SoundMaker<short>::ListDevices();
 SoundMaker<short>* sound;
-short oscillator_type = 2;
-short soundcard = 0;
-short playMode = 2;
-double MasterMix = 0.0;
 Oscillator* osc;
 Output* output;
 vector<Note> note;
 MidiHandler* midihandler = new MidiHandler();
 mutex muxNotes;
+RTFIR_lowpass lowpass = RTFIR_lowpass(50, 700.0 / 44100.0);
 
 void loadMidi() {
 	midihandler->initMidiDevice();
@@ -30,13 +65,14 @@ void loadMidi() {
 			notesArray[midihandler->getNote()] = true;
 			Note n{};
 			n.noteId = midihandler->getNote();
-			n.freq = 8.1758 * pow(pow(2.0, 1.0 / 12.0), midihandler->getNote());
+			n.freq = BASE_MIDI_FREQUENCY * pow(pow(2.0, 1.0 / 12.0), midihandler->getNote());
 			n.active = true;
 			n.amplitude = osc->getAmplitude();
 
 			note.emplace_back(n);
 
 			osc->On(sound->GetTime());
+			osc->setVelocityPressure(midihandler->getVelocity());
 		}
 
 		if (!midihandler->getKeyPressedState() && notesArray[midihandler->getNote()] == true) {
@@ -63,12 +99,19 @@ void loadMidi() {
 			}
 			
 		}
-
-		cout << "\r" << note.size();
+		cout << "\rFrequency base: " << osc->getFrequency()
+			<< " Hz | Notes pressed at same time: " << note.size()
+			<< " | Current Amplitude: " << osc->getAmplitude();
 	}
 }
 
-
+void optionKeys() {
+	for (int i = 1; i < 6; i++) {
+		if ((GetAsyncKeyState((unsigned char)"12345"[i]) & 0x8000)) {
+			oscillator_type = i;
+		}
+	}
+}
 
 void playOnKeyboard() {
 	cout << "Play now!";
@@ -85,7 +128,7 @@ void playOnKeyboard() {
 					if (pressed[i] == false) {
 						Note n{};
 						n.noteId = i;
-						n.freq = 440 * pow(2.0, (double)i / 12.0);
+						n.freq = BASE_KEYBOARD_FREQUENCY * pow(2.0, (double)i / 12.0);
 						n.active = true;
 						n.amplitude = osc->getAmplitude();
 
@@ -97,19 +140,21 @@ void playOnKeyboard() {
 				}
 			}
 			else {
+				cout << "\r";
 				if (!(GetAsyncKeyState((unsigned char)"AWSEDFTGZHUJK\xbcL\xbe\xbf"[i]) & 0x8000) && pressed[i]) {
 					osc->Off(sound->GetTime());
+					
 					pressed[i] = false;
 					iterator->active = false;
 					note.erase(iterator);
-				}
-					
-			}
-			cout << note.size() << endl;
-			
-			
+				}	
+			}			
 		}
-
+		cout << "\rFrequency base: " << osc->getFrequency()
+			<< " Hz | Notes pressed at same time: " << note.size()
+			<< " | Current Amplitude: " << osc->getAmplitude();
+			
+		optionKeys();
 		this_thread::sleep_for(5ms);
 	}
 }
@@ -120,42 +165,91 @@ void loadSoundMaker() {
 		wcout << "Kimeneti eszközök: " << endl << num << ". " << d << endl;
 		num++;
 	}
-	cout << "Kiválasztott hangkartya: " && cin >> soundcard;
-	sound = new SoundMaker<short>(devices[soundcard], 44100, 1, 8, 1024);
+	do {
+		std::cout << "Kiválasztott hangkartya: " && cin >> soundcard;
+	} while (soundcard >= devices.size());
+	sound = new SoundMaker<short>(devices[soundcard], DEFAULT_SAMPLE_RATE, DEFAULT_OUTPUT_MODE, DEFAULT_BLOCK_COUNT, DEFAULT_BLOCK_SAMPLE);
 	osc = new Oscillator();
 
 
-	cout << "Oscillator types: \n 1 - Sine \n 2 - Triangle \n 3 - Square \n 4 - Pink Noise \n 5 - Sawtooth" << endl;
-	cout << "Oscillate this: " && cin >> oscillator_type;
+	std::cout << "Oscillator types: \n 1 - Sine \n 2 - Triangle \n 3 - Square \n 4 - White Noise \n 5 - Sawtooth" << endl;
+	std::cout << "Oscillate this: " && cin >> oscillator_type;
+	if (oscillator_type == WHITE_NOISE) {
+		double min = osc->getWhiteNoiseMinFreq();
+		double max = osc->getWhiteNoiseMaxFreq();
+		std::cout << "White Noise minimum frequency (Hz): " && cin >> min;
+		std::cout << "White Noise maximum frequency (Hz): " && cin >> max;
+		osc->setWhiteNoiseFreqScale(min, max);
+	}
 
-	cout << "Choose input method: \n 1 - Keyboard \n 2 - MIDI" << endl;
-	cout << "Playmode: " && cin >> playMode;
+	std::cout << "Enable envelope? (Y/N): " && cin >> answer;
+	if (answer == toupper('y') || answer == 'y') {
+		isEnvelope = true;
+		double a{}, d{}, r{};
+		int mPercent{}, sPercent{};
+		std::cout << "Maximum Level (1-100%): " && cin >> mPercent;
+		std::cout << "Attack time (in seconds): " && cin >> a;
+		std::cout << "Decay time (in seconds): " && cin >> d;
+		std::cout << "Sustain level (1-100%): " && cin >> sPercent;
+		std::cout << "Release time (in seconds): " && cin >> r;
+		if ((mPercent > 100 || mPercent < 1) || (sPercent > 100 || sPercent < 1)) {
+			std::cout << "Invalid values given. ADSR set to default values" << endl;
+			osc->setEnvelope(true, ADSR_MAX_VALUE, ADSR_ATTACK_TIME, ADSR_DECAY_TIME, ADSR_SUSTAIN_LEVEL, ADSR_RELEASE_TIME);
+		}
+		else {
+			double max = ((double)mPercent / 100);
+			double sustain = ((double)sPercent / 100);
+			osc->setEnvelope(true, max, a, d, sustain, r);
+		}
+	}
+	else {
+		int mPercent{};
+		std::cout << "Max Level (1-100%): " && cin >> mPercent;
+		double max = ((double)mPercent / 100);
+		osc->setEnvelope(false, max, 0.0, 0.0, 0.0, 0.0);
+		osc->setAmplitude(max);
+	}
+
+	std::cout << "Enable LPO? (Y/N): " && cin >> answer;
+	if (answer == toupper('y') || answer == 'y') {
+		filterEnabled = true;
+		double filterFreq = LPO_CUTOFF_FREQUENCY;
+		std::cout << "Cutoff frequency (Hz): " && cin >> filterFreq;
+		//Filter meghívás
+	}
+
+	std::cout << "Choose input method: \n 1 - Keyboard \n 2 - MIDI" << endl;
+	std::cout << "Playmode: " && cin >> playMode;
 }
 
 double wrapper(double time) {
 	unique_lock<mutex> lm(muxNotes);
-	MasterMix = 0.0;
+	double MasterMix = 0.0;
 
 	for (auto n : note) {
 		MasterMix += osc->oscillate(time, n.freq, oscillator_type);
 	}
-	
-	return MasterMix;
+
+	return lowpass.Filter(MasterMix);
 }
 
 int main()
 {
+	#if __linux__
+	std::cout << "Unsupported OS";
+	exit(0);
+	#endif
+
 	loadSoundMaker();
 	sound->SetUserFunction(wrapper);
-	osc->setEnvelope(true, 0.1, 0.2, 0.1, 0.2, 0.2);
-	//osc->setEnvelope(true, 0.1, 0.001, 0.3, 0.0, 0.2);
-	
-	if (playMode == 1) {
-		//thread KeyboardProcess = thread(playOnKeyboard);
-		//KeyboardProcess.join();
-		playOnKeyboard();
+	osc->setVelocity(true);
+	std::cout << "\x1B[2J\x1B[H";
+
+	if (playMode == PLAYMODE_KEYBOARD) {
+		thread KeyboardProcess = thread(playOnKeyboard);
+		KeyboardProcess.join();
 	}
-	else if (playMode == 2) {
+	else if (playMode == PLAYMODE_MIDI) {
 		thread MidiProcess = thread(loadMidi);
 		MidiProcess.join();
 	}
