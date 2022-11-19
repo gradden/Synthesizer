@@ -24,9 +24,6 @@
     <ClCompile Include="Oscillator.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="MAKEFILE">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="SoundMaker.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

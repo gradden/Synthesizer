@@ -31,8 +31,11 @@ const double ADSR_RELEASE_TIME = 0.1;
 const double BASE_KEYBOARD_FREQUENCY = 440.0;
 const double BASE_MIDI_FREQUENCY = 8.1758;
 
-const int LPO_TAPS = 50;
-const double LPO_CUTOFF_FREQUENCY = 150.0;
+const int LPF_TAPS = 50;
+const double LPF_CUTOFF_FREQUENCY = 150.0;
+
+const int WHITE_NOISE_MIN_FREQ = 10;
+const int WHITE_NOISE_MAX_FREQ = 20000;
 
 bool filterEnabled = false;
 bool isEnvelope = false;
@@ -52,7 +55,7 @@ Output* output;
 vector<Note> note;
 MidiHandler* midihandler = new MidiHandler();
 mutex muxNotes;
-RTFIR_lowpass lowpass = RTFIR_lowpass(50, 700.0 / 44100.0);
+Filter* lowpass = new Filter(DEFAULT_SAMPLE_RATE, LPF_TAPS);
 
 void loadMidi() {
 	midihandler->initMidiDevice();
@@ -179,6 +182,10 @@ void loadSoundMaker() {
 		double max = osc->getWhiteNoiseMaxFreq();
 		std::cout << "White Noise minimum frequency (Hz): " && cin >> min;
 		std::cout << "White Noise maximum frequency (Hz): " && cin >> max;
+		if (min < WHITE_NOISE_MIN_FREQ || max > WHITE_NOISE_MAX_FREQ) {
+			min = WHITE_NOISE_MIN_FREQ;
+			max = WHITE_NOISE_MAX_FREQ;
+		}
 		osc->setWhiteNoiseFreqScale(min, max);
 	}
 
@@ -210,12 +217,12 @@ void loadSoundMaker() {
 		osc->setAmplitude(max);
 	}
 
-	std::cout << "Enable LPO? (Y/N): " && cin >> answer;
+	std::cout << "Enable LPF? (Y/N): " && cin >> answer;
 	if (answer == toupper('y') || answer == 'y') {
 		filterEnabled = true;
-		double filterFreq = LPO_CUTOFF_FREQUENCY;
+		double filterFreq = LPF_CUTOFF_FREQUENCY;
 		std::cout << "Cutoff frequency (Hz): " && cin >> filterFreq;
-		//Filter meghívás
+		lowpass->setCutoff(filterFreq);
 	}
 
 	std::cout << "Choose input method: \n 1 - Keyboard \n 2 - MIDI" << endl;
@@ -230,7 +237,7 @@ double wrapper(double time) {
 		MasterMix += osc->oscillate(time, n.freq, oscillator_type);
 	}
 
-	return lowpass.Filter(MasterMix);
+	return filterEnabled ? lowpass->filter(MasterMix) : MasterMix;
 }
 
 int main()

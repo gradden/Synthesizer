@@ -141,7 +141,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="MAKEFILE" />
     <ClCompile Include="MidiHandler.cpp" />
     <ClCompile Include="Oscillator.cpp" />
     <ClCompile Include="SoundMaker.cpp" />

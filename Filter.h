@@ -2,77 +2,62 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
-#include "rtfir.hpp"
 
-// Some math.h implementations don't define M_PI
-#ifndef M_PI
-#define M_PI 3.14159265358979323846
-#endif
+class Filter {
+private:
+    double* filterCoeff;
+    double* buffer;
+    double cutoffFrequency;
+    int taps;
+    int sampleRate;
 
+    void generateLowPassCoeff() {
+        if (this->cutoffFrequency < 0.0 || this->cutoffFrequency > this->sampleRate) {
+            this->cutoffFrequency = this->sampleRate / 2.0;
+        }
 
-/*!\brief Constructor for base FIR object
- * \param Taps Number of taps in the filter
- */
-RTFIR::RTFIR(const unsigned int& Taps) {
-    coeff = new double[Taps];
-    buffer = new double[Taps];
-    memset(buffer, 0, Taps * sizeof(double));
-    taps = Taps;
-}
-
-/*!\brief Deconstructor for base FIR object
- */
-RTFIR::~RTFIR() {
-    delete[] coeff;
-    delete[] buffer;
-}
-
-/*!\brief Filters input data
- * \param Sample Sample to filter
- * \return Filtered sample
- */
-double RTFIR::Filter(const double& Sample) {
-    // Roll back samplebuffer
-    memmove(&buffer[1], &buffer[0], (taps - 1) * sizeof(*buffer));
-    buffer[0] = Sample;
-
-    // Perform multiplication
-    double output = 0;
-    for (unsigned int i = 0; i < taps; i++) {
-        output += buffer[i] * coeff[i];
-    }
-    return output;
-}
-
-/*!\brief Get a list of coefficients for debugging
- * \return List of FIR coefficients
- */
-std::vector<double> RTFIR::GetCoefficients() const {
-    std::vector<double> c;
-    c.resize(taps);
-    for (unsigned int i = 0; i < taps; i++) {
-        c[i] = coeff[i];
-    }
-    return c;
-}
-
-/*!\brief Constructor for lowpass FIR filter
- * \param Taps Number of taps in the FIR filter
- * \param Freq Normalized cutoff-frequency (f/fs)
- */
-RTFIR_lowpass::RTFIR_lowpass(const unsigned int& Taps, const double& Freq) : RTFIR(Taps) {
-    if (Freq < 0.0 || Freq>0.5) {
-        throw std::invalid_argument("Frequencies must be normalized");
-    }
-    else {
-        int W = Taps / 2;
-        for (int i = -W; i < W; i++) {
+        double cutoff = this->cutoffFrequency / this->sampleRate;
+        int a = this->taps / 2;
+        cout << a << endl;
+        for (int i = -a; i < a; i++) {
             if (i == 0) {
-                coeff[W] = 2 * Freq;
+                filterCoeff[a] = 2 * cutoff;
             }
             else {
-                coeff[i + W] = sin(2 * (M_PI)*Freq * i) / (i * (M_PI));
+                filterCoeff[i + a] = sin(2 * (M_PI)*cutoff * i) / (i * (M_PI));
             }
         }
     }
-}
+
+public:
+    Filter(int sampleRate, int taps = 20) {
+        filterCoeff = new double[taps];
+        buffer = new double[taps];
+        memset(buffer, 0.0, taps * sizeof(double));
+        this->taps = taps;
+        this->sampleRate = sampleRate;
+        this->cutoffFrequency = 120.0;
+    }
+
+    ~Filter() {
+        delete[] filterCoeff;
+        delete[] buffer;
+    }
+
+    void setCutoff(double& cutoffFrequency) {
+        this->cutoffFrequency = cutoffFrequency;
+        this->generateCoeff();
+    }
+
+    double filter(const double& inputSample) {
+        memmove(&this->buffer[1], &this->buffer[0], (this->taps - 1) * sizeof(*this->buffer));
+        this->buffer[0] = inputSample;
+
+        double outputSample = 0.0;
+        for (unsigned int i = 0; i < this->taps; i++) {
+            outputSample += this->buffer[i] * this->filterCoeff[i];
+        }
+
+        return outputSample;
+    }
+};
