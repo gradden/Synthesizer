@@ -28,7 +28,7 @@ const double ADSR_DECAY_TIME = 0.1;
 const double ADSR_SUSTAIN_LEVEL = 0.1;
 const double ADSR_RELEASE_TIME = 0.1;
 
-const double BASE_KEYBOARD_FREQUENCY = 440.0;
+const double BASE_KEYBOARD_FREQUENCY = 261.63;
 const double BASE_MIDI_FREQUENCY = 8.1758;
 
 const int LPF_TAPS = 50;
@@ -164,12 +164,14 @@ void playOnKeyboard() {
 
 void loadSoundMaker() {
 	short num = 0;
+	std::cout << "Soundcards: " << endl;
 	for (auto d : devices) {
-		wcout << "Kimeneti eszközök: " << endl << num << ". " << d << endl;
+		std::wcout << num << ". ";
+		std::wcout << d << endl;
 		num++;
 	}
 	do {
-		std::cout << "Kiválasztott hangkartya: " && cin >> soundcard;
+		std::cout << "Select output: " && cin >> soundcard;
 	} while (soundcard >= devices.size());
 	sound = new SoundMaker<short>(devices[soundcard], DEFAULT_SAMPLE_RATE, DEFAULT_OUTPUT_MODE, DEFAULT_BLOCK_COUNT, DEFAULT_BLOCK_SAMPLE);
 	osc = new Oscillator();

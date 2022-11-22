@@ -30,7 +30,7 @@ private:
     }
 
 public:
-    Filter(int sampleRate, int taps = 20) {
+    Filter(int sampleRate, int taps = 50) {
         filterCoeff = new double[taps];
         buffer = new double[taps];
         memset(buffer, 0.0, taps * sizeof(double));
@@ -46,7 +46,7 @@ public:
 
     void setCutoff(double& cutoffFrequency) {
         this->cutoffFrequency = cutoffFrequency;
-        this->generateCoeff();
+        this->generateLowPassCoeff();
     }
 
     double filter(const double& inputSample) {
