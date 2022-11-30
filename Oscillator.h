@@ -55,6 +55,14 @@ private:
 		return mix;
 	}
 
+	double customWave(double frequency, double time) {
+		double mix = 0.0;
+
+		mix = (2.0 / M_PI) * (frequency * M_PI * fmod(time, 1.0 / frequency) - (M_PI / 2.0));
+
+		return mix;
+	}
+
 public:
 	Oscillator();
 
@@ -62,6 +70,7 @@ public:
 	double getEnvelope(double timeNow);
 	void setEnvelope(bool isEnveloping, double maxLevel, double A_time, double D_time, double S_level, double R_time);
 	bool isEnvelopeEnabled();
+	double getReleaseForNote(double timeNow, double amplitude);
 
 	void setAmplitude(double amp);
 	double getAmplitude();

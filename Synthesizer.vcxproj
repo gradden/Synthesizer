@@ -152,7 +152,6 @@
     <ClInclude Include="MidiHandler.h" />
     <ClInclude Include="Note.h" />
     <ClInclude Include="Oscillator.h" />
-    <ClInclude Include="Output.h" />
     <ClInclude Include="SoundMaker.h" />
   </ItemGroup>
   <ItemGroup>

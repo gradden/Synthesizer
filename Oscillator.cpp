@@ -72,6 +72,21 @@ double Oscillator::getEnvelope(double timeNow) {
 		return currentAmplitude;
 	}
 
+double Oscillator::getReleaseForNote(double timeNow, double amplitude) {
+	double currentAmplitude = amplitude;
+	if (this->isEnveloping) {
+		currentAmplitude = ((timeNow - this->offTime) / this->releaseTime) * (0.0 - this->sustainLevel) + this->sustainLevel;
+
+		if (currentAmplitude < 0.01) {
+			currentAmplitude = 0.0;
+		}
+	}
+	else {
+		return 0.0;
+	}
+	return currentAmplitude;
+}
+
 void Oscillator::setEnvelope(bool isEnveloping, double maxLevel = 0.0, double A_time = 0.1, double D_time = 0.1, double S_level = 0.0, double R_time = 0.1) {
 	this->isEnveloping = isEnveloping;
 	if (isEnveloping) {
@@ -128,7 +143,7 @@ double Oscillator::oscillate(double time, double frequency, int osc) {
 		return 0.0;
 		break;
 	case 1:
-		return SineWave(frequency, time) * this->getEnvelope(time);
+		return SineWave(frequency, time);
 		break;
 	case 2:
 		return TriangleWave(frequency, time) * this->getEnvelope(time);
@@ -142,7 +157,11 @@ double Oscillator::oscillate(double time, double frequency, int osc) {
 	case 5:
 		return SawtoothWave(frequency, time) * this->getEnvelope(time);
 		break;
+	case 6:
+		return customWave(frequency, time) * this->getEnvelope(time);
+		break;
 	}
+	
 }
 
 void Oscillator::setWhiteNoiseFreqScale(double& min, double& max) {

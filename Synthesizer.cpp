@@ -4,7 +4,6 @@ using namespace std;
 #include "SoundMaker.h"
 #include "Oscillator.h"
 #include "Note.h"
-#include "Output.h"
 #include "MidiHandler.h"
 #include "Filter.h"
 #include "Constants.cpp"
@@ -13,17 +12,15 @@ bool filterEnabled = false;
 bool isEnvelope = false;
 
 short oscillator_type = TRIANGLE_WAVE;
-short playMode = DEFAULT_OUTPUT_MODE;
+short playMode = PLAYMODE_KEYBOARD;
 short soundcard = 0;
 
 double MasterMix = 0.0;
-
 char answer;
 
-vector<wstring> devices = SoundMaker<short>::ListDevices();
+vector<wstring> devices = SoundMaker<short>::getSoundcards();
 SoundMaker<short>* sound;
 Oscillator* osc;
-Output* output;
 vector<Note> note;
 MidiHandler* midihandler = new MidiHandler();
 mutex muxNotes;
@@ -46,7 +43,7 @@ void loadMidi() {
 
 			note.emplace_back(n);
 
-			osc->On(sound->GetTime());
+			osc->On(sound->getTime());
 			osc->setVelocityPressure(midihandler->getVelocity());
 		}
 
@@ -54,7 +51,7 @@ void loadMidi() {
 			notesArray[midihandler->getNote()] = false;
 			int noteId = midihandler->getNote();
 			auto it = find_if(note.begin(), note.end(), [&noteId](const Note& obj) {return obj.active && obj.noteId == noteId; });
-			osc->Off(sound->GetTime());
+			osc->Off(sound->getTime());
 			while (it->amplitude >= 0.01) {
 				it->amplitude = osc->getAmplitude();
 			}
@@ -110,20 +107,20 @@ void playOnKeyboard() {
 						pressed[i] = true;
 						note.emplace_back(n);
 
-						osc->On(sound->GetTime());
+						osc->On(sound->getTime());
 					}
 				}
 			}
 			else {
 				cout << "\r";
 				if (!(GetAsyncKeyState((unsigned char)"AWSEDFTGZHUJK\xbcL\xbe\xbf"[i]) & 0x8000) && pressed[i]) {
-					osc->Off(sound->GetTime());
-					
 					pressed[i] = false;
-					iterator->active = false;
+					if (!n.active) {
+						n.amplitude = osc->getReleaseForNote(sound->getTime(), osc->getAmplitude());
+					}
 					note.erase(iterator);
 				}	
-			}			
+			}
 		}
 		cout << "\rFrequency base: " << osc->getFrequency()
 			<< " Hz | Notes pressed at same time: " << note.size()
@@ -208,7 +205,8 @@ double wrapper(double time) {
 	double MasterMix = 0.0;
 
 	for (auto n : note) {
-		MasterMix += osc->oscillate(time, n.freq, oscillator_type);
+		n.amplitude = osc->getEnvelope(sound->getTime());
+		MasterMix += osc->oscillate(time, n.freq, oscillator_type) * n.amplitude;
 	}
 
 	return filterEnabled ? lowpass->filter(MasterMix) : MasterMix;
@@ -222,7 +220,7 @@ int main()
 	#endif
 
 	loadSoundMaker();
-	sound->SetUserFunction(wrapper);
+	sound->setWave(wrapper);
 	osc->setVelocity(true);
 	std::cout << "\x1B[2J\x1B[H";
 

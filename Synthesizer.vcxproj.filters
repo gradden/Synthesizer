@@ -32,22 +32,19 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="SoundMaker.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Oscillator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Note.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Output.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="MidiHandler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Filter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SoundMaker.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

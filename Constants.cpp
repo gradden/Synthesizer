@@ -8,7 +8,7 @@ const short PLAYMODE_KEYBOARD = 1;
 const short PLAYMODE_MIDI = 2;
 
 const int DEFAULT_SAMPLE_RATE = 44100;
-const short DEFAULT_OUTPUT_MODE = 1;
+const short DEFAULT_OUTPUT_MODE = 2;
 const short DEFAULT_BLOCK_COUNT = 8;
 const int DEFAULT_BLOCK_SAMPLE = 512;
 
