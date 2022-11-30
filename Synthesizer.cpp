@@ -115,9 +115,7 @@ void playOnKeyboard() {
 				cout << "\r";
 				if (!(GetAsyncKeyState((unsigned char)"AWSEDFTGZHUJK\xbcL\xbe\xbf"[i]) & 0x8000) && pressed[i]) {
 					pressed[i] = false;
-					if (!n.active) {
-						n.amplitude = osc->getReleaseForNote(sound->getTime(), osc->getAmplitude());
-					}
+					iterator->active = false;
 					note.erase(iterator);
 				}	
 			}
