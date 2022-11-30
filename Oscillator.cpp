@@ -2,6 +2,7 @@
 
 #include "Oscillator.h"
 #include <math.h>
+#include <iostream>
 
 Oscillator::Oscillator()
 {
@@ -26,11 +27,11 @@ Oscillator::Oscillator()
 	this->whiteNoiseMaxFreq = 20000;
 }
 
-double Oscillator::getEnvelope(double timeNow) {
+double Oscillator::getEnvelope(double timeNow, bool on) {
 		double currentAmplitude = 0.0;
 		double envelopeTimeWindow = timeNow - this->onTime;
 
-		if (this->onKey) {
+		if (on) {
 			if (this->isEnveloping) {
 
 				if (envelopeTimeWindow <= this->attackTime)
@@ -47,7 +48,7 @@ double Oscillator::getEnvelope(double timeNow) {
 				}
 			}
 			else {
-				return this->amplitude;
+				currentAmplitude = this->amplitude;
 			}
 		}
 		else {
@@ -59,7 +60,7 @@ double Oscillator::getEnvelope(double timeNow) {
 				}
 			}
 			else {
-				return 0.0;
+				currentAmplitude = 0.0;
 			}
 		}
 
@@ -68,7 +69,6 @@ double Oscillator::getEnvelope(double timeNow) {
 			currentAmplitude = velocitiedLevel * this->velocity;
 		}
 
-		this->amplitude = currentAmplitude;
 		return currentAmplitude;
 	}
 
@@ -146,19 +146,19 @@ double Oscillator::oscillate(double time, double frequency, int osc) {
 		return SineWave(frequency, time);
 		break;
 	case 2:
-		return TriangleWave(frequency, time) * this->getEnvelope(time);
+		return TriangleWave(frequency, time);
 		break;
 	case 3:
-		return SquareWave(frequency, time) * this->getEnvelope(time);
+		return SquareWave(frequency, time);
 		break;
 	case 4:
-		return WhiteNoise(time, this->whiteNoiseMinFreq, this->whiteNoiseMaxFreq) * this->getEnvelope(time);
+		return WhiteNoise(time, this->whiteNoiseMinFreq, this->whiteNoiseMaxFreq);
 		break;
 	case 5:
-		return SawtoothWave(frequency, time) * this->getEnvelope(time);
+		return SawtoothWave(frequency, time);
 		break;
 	case 6:
-		return customWave(frequency, time) * this->getEnvelope(time);
+		return customWave(frequency, time);
 		break;
 	}
 	

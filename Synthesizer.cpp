@@ -52,13 +52,11 @@ void loadMidi() {
 			int noteId = midihandler->getNote();
 			auto it = find_if(note.begin(), note.end(), [&noteId](const Note& obj) {return obj.active && obj.noteId == noteId; });
 			osc->Off(sound->getTime());
-			while (it->amplitude >= 0.01) {
-				it->amplitude = osc->getAmplitude();
-			}
 
-			if (it != note.end()) {
+			if (it->amplitude <= 0.01) {
 				note.erase(it);
 			}
+			
 
 			bool allEmpty = true;
 			for (auto a : notesArray) {
@@ -196,6 +194,9 @@ void loadSoundMaker() {
 
 	std::cout << "Choose input method: \n 1 - Keyboard \n 2 - MIDI" << endl;
 	std::cout << "Playmode: " && cin >> playMode;
+	if (playMode == PLAYMODE_MIDI) {
+		osc->setVelocity(PLAY_WITH_VELOCITY);
+	}
 }
 
 double wrapper(double time) {
@@ -203,7 +204,7 @@ double wrapper(double time) {
 	double MasterMix = 0.0;
 
 	for (auto n : note) {
-		n.amplitude = osc->getEnvelope(sound->getTime());
+		n.amplitude = osc->getEnvelope(sound->getTime(), n.active);
 		MasterMix += osc->oscillate(time, n.freq, oscillator_type) * n.amplitude;
 	}
 
