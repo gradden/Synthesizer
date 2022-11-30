@@ -144,7 +144,6 @@
     <ClCompile Include="Constants.cpp" />
     <ClCompile Include="MidiHandler.cpp" />
     <ClCompile Include="Oscillator.cpp" />
-    <ClCompile Include="SoundMaker.cpp" />
     <ClCompile Include="Synthesizer.cpp" />
   </ItemGroup>
   <ItemGroup>

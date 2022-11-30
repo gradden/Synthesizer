@@ -53,7 +53,7 @@ public:
 		this->SoundCardThread = thread(&SoundMaker::sendSound, this);
 
 		unique_lock<mutex> lm(this->blockMutex);
-		this->isHandlerPrepared.notify_one();
+		this->threadHandler.notify_one();
 	}
 
 	~SoundMaker() {
@@ -63,11 +63,10 @@ public:
 	}
 
 	static vector<wstring> getSoundcards() {
-		int DeviceCount = waveOutGetNumDevs();
 		vector<wstring> devices;
 		WAVEOUTCAPS waveoutcaps;
 
-		for (int i = 0; i < DeviceCount; i++) {
+		for (int i = 0; i < waveOutGetNumDevs(); i++) {
 			if (waveOutGetDevCaps(i, &waveoutcaps, sizeof(WAVEOUTCAPS)) == S_OK) {
 				devices.push_back(waveoutcaps.szPname);
 			}
@@ -101,7 +100,7 @@ private:
 	double(*soundWave)(double);
 	atomic<unsigned int> freeBlocks;
 	mutex blockMutex;
-	condition_variable isHandlerPrepared;
+	condition_variable threadHandler;
 	vector<wstring> soundcards;
 
 	bool openWaveOut(short soundcardId) {
@@ -130,7 +129,7 @@ private:
 		while (1) {
 			if (this->freeBlocks == 0) {
 				unique_lock<mutex> lm(this->blockMutex);
-				this->isHandlerPrepared.wait(lm);
+				this->threadHandler.wait(lm);
 			}
 			else {
 				this->freeBlocks -= 1;
@@ -164,13 +163,11 @@ private:
 	}
 
 	void waveOutProc(HWAVEOUT hWaveOut, UINT uMsg, DWORD dwParam1, DWORD dwParam2) {
-		if (uMsg != WOM_DONE) {
-			return;
+		if (uMsg == WOM_DONE) {
+			this->freeBlocks++;
+			unique_lock<mutex> lm(this->blockMutex);
+			this->threadHandler.notify_one();
 		}
-
-		this->freeBlocks++;
-		unique_lock<mutex> lm(this->blockMutex);
-		this->isHandlerPrepared.notify_one();
 	}
 
 	static void CALLBACK waveOutProcWrap(HWAVEOUT hWaveOut, UINT uMsg, DWORD dwInstance, DWORD dwParam1, DWORD dwParam2) {
