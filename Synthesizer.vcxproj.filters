@@ -41,7 +41,7 @@
     <ClInclude Include="Filter.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="SoundMaker.h">
+    <ClInclude Include="SoundcardHandler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

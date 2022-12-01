@@ -151,7 +151,7 @@
     <ClInclude Include="MidiHandler.h" />
     <ClInclude Include="Note.h" />
     <ClInclude Include="Oscillator.h" />
-    <ClInclude Include="SoundMaker.h" />
+    <ClInclude Include="SoundcardHandler.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />

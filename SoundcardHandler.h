@@ -13,10 +13,9 @@
 
 using namespace std;
 
-template<class T>
-class SoundMaker {
+class SoundcardHandler {
 public:
-	SoundMaker(wstring selectedSoundcard, unsigned int sampleRate = 44100, unsigned int channel = 1, unsigned int blocks = 8, unsigned int blockSamples = 512) {
+	SoundcardHandler(wstring selectedSoundcard, UINT sampleRate = 44100, UINT channel = 1, UINT blocks = 8, UINT blockSamples = 512) {
 		this->sampleRate = sampleRate;
 		this->channel = channel;
 		this->blocks = blocks;
@@ -25,41 +24,38 @@ public:
 		this->currentBlock = 0;
 		this->time = 0.0;
 		this->limitValue = 1.0;
+		this->sampleSize = sizeof(short) * 8;
+		this->maxSample = pow(2, this->sampleSize - 1) - 1;
 		this->soundcards = this->getSoundcards();
-		this->MemoryUnit = new T[blocks * blockSamples];
+		this->MemoryUnit = new short[blocks * blockSamples];
 		this->wavehdr = new WAVEHDR[blocks];
 		auto iterator = find(this->soundcards.begin(), this->soundcards.end(), selectedSoundcard);
 
-		if (this->wavehdr == nullptr || this->MemoryUnit == nullptr) {
-			std::exception("Memory initialization is not null");
-		}
-
-		ZeroMemory(this->MemoryUnit, (sizeof(T) * this->blocks * this->blockSamples));
-		ZeroMemory(this->wavehdr, (sizeof(WAVEHDR) * this->blocks));
+		ZeroMemory(this->MemoryUnit, (sizeof(this->MemoryUnit)));
+		ZeroMemory(this->wavehdr, (sizeof(WAVEHDR) * blocks));
 
 		if (iterator != this->soundcards.end()) {
 			short soundcardID = distance(soundcards.begin(), iterator);
 			if (!this->openWaveOut(soundcardID)) {
-				std::exception("Failed to open soundcard");
+				throw exception("Failed to open soundcard");
 			}
 		}
 		else {
-			throw std::exception("Soundcard not found!");
+			throw exception("Soundcard not found!");
 		}
 
-		for (unsigned int n = 0; n < blocks; n++) {
-			this->wavehdr[n].dwBufferLength = sizeof(T) * this->blockSamples;
+		for (UINT n = 0; n < blocks; n++) {
+			this->wavehdr[n].dwBufferLength = sizeof(short) * this->blockSamples;
 			this->wavehdr[n].lpData = (LPSTR)(this->MemoryUnit + (n * this->blockSamples));
 		}
 
-		this->SoundCardThread = thread(&SoundMaker::sendSound, this);
+		this->SoundCardThread = thread(&SoundcardHandler::sendSound, this);
 
 		unique_lock<mutex> lm(this->blockMutex);
 		this->threadHandler.notify_one();
 	}
 
-	~SoundMaker() {
-		terminate(this->SoundCardThread);
+	~SoundcardHandler() {
 		delete[] this->MemoryUnit;
 		delete[] this->wavehdr;
 	}
@@ -69,8 +65,11 @@ public:
 		WAVEOUTCAPS waveoutcaps;
 
 		for (int i = 0; i < waveOutGetNumDevs(); i++) {
-			if (waveOutGetDevCaps(i, &waveoutcaps, sizeof(WAVEOUTCAPS)) == S_OK) {
+			if (waveOutGetDevCaps(i, &waveoutcaps, sizeof(WAVEOUTCAPS)) == MMSYSERR_NOERROR) {
 				devices.push_back(waveoutcaps.szPname);
+			}
+			else {
+				throw exception("Cannot get the list of soundcards");
 			}
 		}
 
@@ -89,30 +88,32 @@ public:
 private:
 	HWAVEOUT hwaveout;
 	thread SoundCardThread;
-	T* MemoryUnit;
+	short* MemoryUnit;
 	WAVEHDR* wavehdr;
-	unsigned int sampleRate;
-	unsigned short channel;
-	unsigned int blocks;
-	unsigned int blockSamples;
-	unsigned int currentBlock;
+	UINT sampleRate;
+	USHORT channel;
+	UINT blocks;
+	UINT blockSamples;
+	UINT currentBlock;
+	UINT sampleSize;
 	double time;
 	double limitValue;
 	double(*soundWave)(double);
-	atomic<unsigned int> freeBlocks;
+	atomic<UINT> freeBlocks;
 	mutex blockMutex;
 	condition_variable threadHandler;
 	vector<wstring> soundcards;
+	double maxSample;
 
 	bool openWaveOut(short soundcardId) {
 		WAVEFORMATEX wfx{};
 		wfx.wFormatTag = WAVE_FORMAT_PCM;
-		wfx.nSamplesPerSec = this->sampleRate;
-		wfx.nChannels = this->channel;
-		wfx.wBitsPerSample = sizeof(T) * 8;
-		wfx.nBlockAlign = (wfx.wBitsPerSample / 8) * wfx.nChannels;
-		wfx.nAvgBytesPerSec = wfx.nSamplesPerSec * wfx.nBlockAlign;
 		wfx.cbSize = 0;
+		wfx.nChannels = this->channel;
+		wfx.nSamplesPerSec = this->sampleRate;
+		wfx.wBitsPerSample = this->sampleSize;
+		wfx.nBlockAlign = (this->sampleSize / 8) * wfx.nChannels;
+		wfx.nAvgBytesPerSec = this->sampleRate * wfx.nBlockAlign;
 
 		if (waveOutOpen(&this->hwaveout, soundcardId, &wfx, (DWORD_PTR)waveOutWrapper, (DWORD_PTR)this, CALLBACK_FUNCTION) != MMSYSERR_NOERROR) {
 			fprintf(stderr, "Failed to open wave out process\n");
@@ -123,9 +124,6 @@ private:
 	}
 
 	void sendSound() {
-		double timeStep = (1.0 / (double)this->sampleRate);
-		double maxSample = (double)(T)pow(2, (sizeof(T) * 8) - 1) - 1;
-
 		while (1) {
 			if (this->freeBlocks == 0) {
 				unique_lock<mutex> lm(this->blockMutex);
@@ -137,19 +135,12 @@ private:
 				if (this->wavehdr[this->currentBlock].dwFlags & WHDR_PREPARED) {
 					waveOutUnprepareHeader(this->hwaveout, &this->wavehdr[this->currentBlock], sizeof(WAVEHDR));
 				}
-				T newSample = 0.0;
-				int current = this->currentBlock * this->blockSamples;
 
-				for (unsigned int i = 0; i < this->blockSamples; i++) {
-					newSample = (soundWave == nullptr) ? (T)(0.0 * maxSample) : (T)(brickwallLimiter(this->soundWave(this->time)) * maxSample);
-					this->MemoryUnit[current + i] = newSample;
-					this->time += timeStep;
-				}
+				this->fillAudioData();
 
 				waveOutPrepareHeader(this->hwaveout, &this->wavehdr[this->currentBlock], sizeof(WAVEHDR));
 				waveOutWrite(this->hwaveout, &this->wavehdr[this->currentBlock], sizeof(WAVEHDR));
-				this->currentBlock++;
-				this->currentBlock %= this->blocks;
+				this->currentBlock = (this->currentBlock + 1) % this->blocks;
 			}
 		}
 	}
@@ -163,11 +154,22 @@ private:
 	}
 
 	static void CALLBACK waveOutWrapper(HWAVEOUT hWaveOut, UINT uMsg, DWORD dwInstance, DWORD dwParam1, DWORD dwParam2) {
-		((SoundMaker*)dwInstance)->waveOutCallback(hWaveOut, uMsg, dwParam1, dwParam2);
+		((SoundcardHandler*)dwInstance)->waveOutCallback(hWaveOut, uMsg, dwParam1, dwParam2);
 	}
 
 	double brickwallLimiter(double sample) {
 		return (sample >= 0.0) ? fmin(sample, this->limitValue) : fmax(sample, -this->limitValue);
+	}
+
+	void fillAudioData() {
+		int current = this->currentBlock * this->blockSamples;
+
+		for (UINT i = 0; i < this->blockSamples; i++) {
+			this->MemoryUnit[current + i] = (soundWave == nullptr) ?
+				(short)(0.0 * (double)maxSample) :
+				(short)(brickwallLimiter(this->soundWave(this->time)) * (double)maxSample);
+			this->time += (1.0 / (double)this->sampleRate);
+		}
 	}
 	
 };

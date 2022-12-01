@@ -1,7 +1,7 @@
 ﻿#include <iostream>
 using namespace std;
 
-#include "SoundMaker.h"
+#include "SoundcardHandler.h"
 #include "Oscillator.h"
 #include "Note.h"
 #include "MidiHandler.h"
@@ -18,8 +18,8 @@ short soundcard = 0;
 double MasterMix = 0.0;
 char answer;
 
-vector<wstring> devices = SoundMaker<short>::getSoundcards();
-SoundMaker<short>* sound;
+vector<wstring> devices = SoundcardHandler::getSoundcards();
+SoundcardHandler* sound;
 Oscillator* osc;
 vector<Note> note;
 MidiHandler* midihandler = new MidiHandler();
@@ -57,7 +57,6 @@ void loadMidi() {
 				note.erase(it);
 			}
 			
-
 			bool allEmpty = true;
 			for (auto a : notesArray) {
 				if (a != false) {
@@ -138,7 +137,7 @@ void loadSoundMaker() {
 	do {
 		std::cout << "Select output: " && cin >> soundcard;
 	} while (soundcard >= devices.size());
-	sound = new SoundMaker<short>(devices[soundcard], DEFAULT_SAMPLE_RATE, DEFAULT_OUTPUT_MODE, DEFAULT_BLOCK_COUNT, DEFAULT_BLOCK_SAMPLE);
+	sound = new SoundcardHandler(devices[soundcard], DEFAULT_SAMPLE_RATE, DEFAULT_OUTPUT_MODE, DEFAULT_BLOCK_COUNT, DEFAULT_BLOCK_SAMPLE);
 	osc = new Oscillator();
 
 
@@ -220,16 +219,16 @@ int main()
 
 	loadSoundMaker();
 	sound->setWave(wrapper);
-	osc->setVelocity(true);
 	std::cout << "\x1B[2J\x1B[H";
 
-	if (playMode == PLAYMODE_KEYBOARD) {
-		thread KeyboardProcess = thread(playOnKeyboard);
-		KeyboardProcess.join();
-	}
-	else if (playMode == PLAYMODE_MIDI) {
-		thread MidiProcess = thread(loadMidi);
-		MidiProcess.join();
+	switch (playMode)
+	{
+	case PLAYMODE_KEYBOARD:
+		playOnKeyboard();
+		break;
+	case PLAYMODE_MIDI:
+		loadMidi();
+		break;
 	}
 
 	return 0;
