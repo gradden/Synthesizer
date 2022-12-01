@@ -116,7 +116,6 @@ private:
 		wfx.nAvgBytesPerSec = this->sampleRate * wfx.nBlockAlign;
 
 		if (waveOutOpen(&this->hwaveout, soundcardId, &wfx, (DWORD_PTR)waveOutWrapper, (DWORD_PTR)this, CALLBACK_FUNCTION) != MMSYSERR_NOERROR) {
-			fprintf(stderr, "Failed to open wave out process\n");
 			return false;
 		}
 
