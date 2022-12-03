@@ -49,10 +49,7 @@ public:
 			this->wavehdr[n].lpData = (LPSTR)(this->MemoryUnit + (n * this->blockSamples));
 		}
 
-		this->SoundCardThread = thread(&SoundcardHandler::sendSound, this);
-
-		unique_lock<mutex> lm(this->blockMutex);
-		this->threadHandler.notify_one();
+		this->startCommunication();
 	}
 
 	~SoundcardHandler() {
@@ -65,10 +62,11 @@ public:
 		WAVEOUTCAPS waveoutcaps;
 
 		for (int i = 0; i < waveOutGetNumDevs(); i++) {
-			if (waveOutGetDevCaps(i, &waveoutcaps, sizeof(WAVEOUTCAPS)) == MMSYSERR_NOERROR) {
+			try {
+				waveOutGetDevCaps(i, &waveoutcaps, sizeof(WAVEOUTCAPS));
 				devices.push_back(waveoutcaps.szPname);
 			}
-			else {
+			catch (std::exception e) {
 				throw exception("Cannot get the list of soundcards");
 			}
 		}
@@ -115,7 +113,10 @@ private:
 		wfx.nBlockAlign = (this->sampleSize / 8) * wfx.nChannels;
 		wfx.nAvgBytesPerSec = this->sampleRate * wfx.nBlockAlign;
 
-		if (waveOutOpen(&this->hwaveout, soundcardId, &wfx, (DWORD_PTR)waveOutWrapper, (DWORD_PTR)this, CALLBACK_FUNCTION) != MMSYSERR_NOERROR) {
+		try {
+			waveOutOpen(&this->hwaveout, soundcardId, &wfx, (DWORD_PTR)waveOutWrapper, (DWORD_PTR)this, CALLBACK_FUNCTION);
+		} 
+		catch (std::exception e) {
 			return false;
 		}
 
@@ -129,17 +130,23 @@ private:
 				this->threadHandler.wait(lm);
 			}
 			else {
-				this->freeBlocks -= 1;
+				try {
+					this->freeBlocks -= 1;
 
-				if (this->wavehdr[this->currentBlock].dwFlags & WHDR_PREPARED) {
-					waveOutUnprepareHeader(this->hwaveout, &this->wavehdr[this->currentBlock], sizeof(WAVEHDR));
+					if (this->wavehdr[this->currentBlock].dwFlags & WHDR_PREPARED) {
+						waveOutUnprepareHeader(this->hwaveout, &this->wavehdr[this->currentBlock], sizeof(WAVEHDR));
+					}
+
+					this->fillAudioData();
+
+					waveOutPrepareHeader(this->hwaveout, &this->wavehdr[this->currentBlock], sizeof(WAVEHDR));
+					waveOutWrite(this->hwaveout, &this->wavehdr[this->currentBlock], sizeof(WAVEHDR));
+					this->currentBlock = (this->currentBlock + 1) % this->blocks;
 				}
-
-				this->fillAudioData();
-
-				waveOutPrepareHeader(this->hwaveout, &this->wavehdr[this->currentBlock], sizeof(WAVEHDR));
-				waveOutWrite(this->hwaveout, &this->wavehdr[this->currentBlock], sizeof(WAVEHDR));
-				this->currentBlock = (this->currentBlock + 1) % this->blocks;
+				catch (std::exception e) {
+					throw std::exception("Fail in communication thread!");
+				}
+				
 			}
 		}
 	}
@@ -169,6 +176,12 @@ private:
 				(short)(brickwallLimiter(this->soundWave(this->time)) * (double)maxSample);
 			this->time += (1.0 / (double)this->sampleRate);
 		}
+	}
+
+	void startCommunication() {
+		this->SoundCardThread = thread(&SoundcardHandler::sendSound, this);
+		unique_lock<mutex> lm(this->blockMutex);
+		this->threadHandler.notify_one();
 	}
 	
 };
