@@ -25,19 +25,18 @@ public:
 		this->time = 0.0;
 		this->limitValue = 5.0;
 		this->sampleSize = sizeof(short) * 8;
-		this->maxSample = pow(2, this->sampleSize - 1) - 1;
+		this->maxSample = SHRT_MAX;
 		this->soundcards = this->getSoundcards();
 		this->MemoryUnit = new short[blocks * blockSamples];
 		this->wavehdr = new WAVEHDR[blocks];
 		std::vector<wstring>::iterator iterator = 
 			find(this->soundcards.begin(), this->soundcards.end(), selectedSoundcard);
 
-		ZeroMemory(this->MemoryUnit, (sizeof(this->MemoryUnit)));
-		ZeroMemory(this->wavehdr, (sizeof(WAVEHDR) * blocks));
+		memset(this->MemoryUnit, 0, (sizeof(this->MemoryUnit)));
+		memset(this->wavehdr, 0,  (sizeof(WAVEHDR) * blocks));
 
 		if (iterator != this->soundcards.end()) {
-			short soundcardID = distance(soundcards.begin(), iterator);
-			if (!this->openWaveOut(soundcardID)) {
+			if (!this->openWaveOut(distance(soundcards.begin(), iterator))) {
 				throw exception("Failed to open soundcard");
 			}
 		}
@@ -60,12 +59,12 @@ public:
 
 	static vector<wstring> getSoundcards() {
 		vector<wstring> cards;
-		WAVEOUTCAPS WOC;
+		WAVEOUTCAPS waveOutCaps;
 
 		for (int i = 0; i < waveOutGetNumDevs(); i++) {
 			try {
-				waveOutGetDevCaps(i, &WOC, sizeof(WAVEOUTCAPS));
-				cards.push_back(WOC.szPname);
+				waveOutGetDevCaps(i, &waveOutCaps, sizeof(WAVEOUTCAPS));
+				cards.push_back(waveOutCaps.szPname);
 			}
 			catch (std::exception e) {
 				throw exception("Cannot get the list of soundcards");
@@ -133,15 +132,10 @@ private:
 			else {
 				try {
 					this->freeBlocks -= 1;
-
-					if (this->wavehdr[this->currentBlock].dwFlags & WHDR_PREPARED) {
-						waveOutUnprepareHeader(this->waveOutputVar, &this->wavehdr[this->currentBlock], sizeof(WAVEHDR));
-					}
-
 					this->fillAudioData();
-
 					waveOutPrepareHeader(this->waveOutputVar, &this->wavehdr[this->currentBlock], sizeof(WAVEHDR));
 					waveOutWrite(this->waveOutputVar, &this->wavehdr[this->currentBlock], sizeof(WAVEHDR));
+					waveOutUnprepareHeader(this->waveOutputVar, &this->wavehdr[this->currentBlock], sizeof(WAVEHDR));
 					this->currentBlock = (this->currentBlock + 1) % this->blocks;
 				}
 				catch (std::exception e) {
