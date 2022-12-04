@@ -30,13 +30,14 @@ Oscillator::Oscillator()
 double Oscillator::getEnvelope(double timeNow, bool on) {
 		double currentAmplitude = 0.0;
 		double envelopeTimeWindow = timeNow - this->onTime;
+		double releaseTimeWindow = timeNow - this->offTime;
 
 		double attackTime = (envelopeTimeWindow <= this->attackTime);
 		double sustainTime = (this->attackTime + this->decayTime);
 
 		double ratioWithAttack = (envelopeTimeWindow / this->attackTime);
 		double ratioWithDecay = (envelopeTimeWindow - this->attackTime) / this->decayTime;
-		double ratioWithRelease = (timeNow - this->offTime) / this->releaseTime;
+		double ratioWithRelease = (releaseTimeWindow / this->releaseTime);
 
 		if (on) {
 			if (this->isEnveloping) {
