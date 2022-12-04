@@ -87,7 +87,7 @@ void playOnKeyboard() {
 	bool pressed[16] = { false };
 
 	while (1) {
-		for (int i = 0; i < 16; i++) {
+		for (int i = 0; i < 13; i++) {
 			auto iterator = find_if(note.begin(), note.end(), [&i](const Note& obj) {return obj.noteId == i; });
 
 			if (iterator == note.end()) {
