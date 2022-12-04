@@ -70,7 +70,6 @@ public:
 	double getEnvelope(double timeNow, bool on);
 	void setEnvelope(bool isEnveloping, double maxLevel, double A_time, double D_time, double S_level, double R_time);
 	bool isEnvelopeEnabled();
-	double getReleaseForNote(double timeNow, double amplitude);
 
 	void setAmplitude(double amp);
 	double getAmplitude();

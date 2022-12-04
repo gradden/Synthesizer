@@ -31,18 +31,20 @@ double Oscillator::getEnvelope(double timeNow, bool on) {
 		double currentAmplitude = 0.0;
 		double envelopeTimeWindow = timeNow - this->onTime;
 
+		double attackTime = (envelopeTimeWindow <= this->attackTime);
+		double sustainTime = (this->attackTime + this->decayTime);
+
+		double ratioWithAttack = (envelopeTimeWindow / this->attackTime);
+		double ratioWithDecay = (envelopeTimeWindow - this->attackTime) / this->decayTime;
+		double ratioWithRelease = (timeNow - this->offTime) / this->releaseTime;
+
 		if (on) {
 			if (this->isEnveloping) {
-				if (envelopeTimeWindow <= this->attackTime)
-				{
-					currentAmplitude = (envelopeTimeWindow / this->attackTime) * this->maxLevel;
-				}
+				currentAmplitude = (attackTime) ?
+					ratioWithAttack * this->maxLevel :
+					this->sustainLevel * ratioWithDecay;
 
-				if (envelopeTimeWindow > this->attackTime && envelopeTimeWindow <= (this->attackTime + this->decayTime)) {
-					currentAmplitude = (this->sustainLevel - this->maxLevel) + this->maxLevel * ((envelopeTimeWindow - this->attackTime) / this->decayTime);
-				}
-
-				if (envelopeTimeWindow > (this->attackTime + this->decayTime)) {
+				if (envelopeTimeWindow > sustainTime) {
 					currentAmplitude = this->sustainLevel;
 				}
 			}
@@ -52,7 +54,7 @@ double Oscillator::getEnvelope(double timeNow, bool on) {
 		}
 		else {
 			if (this->isEnveloping) {
-				currentAmplitude = ((timeNow - this->offTime) / this->releaseTime) * (0.0 - this->sustainLevel) + this->sustainLevel;
+				currentAmplitude = ratioWithRelease * (0.0 - this->sustainLevel) + this->sustainLevel;
 
 				if (currentAmplitude < 0.01) {
 					currentAmplitude = 0.0;
@@ -70,21 +72,6 @@ double Oscillator::getEnvelope(double timeNow, bool on) {
 
 		return currentAmplitude;
 	}
-
-double Oscillator::getReleaseForNote(double timeNow, double amplitude) {
-	double currentAmplitude = amplitude;
-	if (this->isEnveloping) {
-		currentAmplitude = ((timeNow - this->offTime) / this->releaseTime) * (0.0 - this->sustainLevel) + this->sustainLevel;
-
-		if (currentAmplitude < 0.01) {
-			currentAmplitude = 0.0;
-		}
-	}
-	else {
-		return 0.0;
-	}
-	return currentAmplitude;
-}
 
 void Oscillator::setEnvelope(bool isEnveloping, double maxLevel, double A_time, double D_time, double S_level, double R_time) {
 	this->isEnveloping = isEnveloping;
