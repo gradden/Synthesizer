@@ -36,7 +36,7 @@ private:
 	}
 
 	double SquareWave(double frequency, double time) {
-		return SineWave(frequency, time) > 0.0 ? 1.0 : 0.0;
+		return SineWave(frequency, time) > 0.0 ? 1.0 : -1.0;
 	}
 
 	double WhiteNoise(double time, double min, double max) {

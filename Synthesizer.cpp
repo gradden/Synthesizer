@@ -49,12 +49,7 @@ void loadMidi() {
 		if (!midihandler->getKeyPressedState() && notesArray[midihandler->getNote()] == true) {
 			notesArray[midihandler->getNote()] = false;
 			int noteId = midihandler->getNote();
-			auto it = find_if(note.begin(), note.end(), [&noteId](const Note& obj) {return obj.active && obj.noteId == noteId; });
 			osc->Off(sound->getTime());
-
-			if (it->amplitude <= 0.01) {
-				note.erase(it);
-			}
 			
 			bool allEmpty = true;
 			for (auto a : notesArray) {
