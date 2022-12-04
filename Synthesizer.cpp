@@ -18,7 +18,7 @@ short soundcard = 0;
 double MasterMix = 0.0;
 char answer;
 
-vector<wstring> devices = SoundcardHandler::getSoundcards();
+vector<wstring> soundcards = SoundcardHandler::getSoundcards();
 SoundcardHandler* sound;
 Oscillator* osc;
 vector<Note> note;
@@ -118,15 +118,15 @@ void playOnKeyboard() {
 void loadSoftware() {
 	short num = 0;
 	std::cout << "Soundcards: " << endl;
-	for (auto d : devices) {
+	for (auto soundcard : soundcards) {
 		std::wcout << num << ". ";
-		std::wcout << d << endl;
+		std::wcout << soundcard << endl;
 		num++;
 	}
 	do {
 		std::cout << "Select output: " && cin >> soundcard;
-	} while (soundcard >= devices.size());
-	sound = new SoundcardHandler(devices[soundcard], DEFAULT_SAMPLE_RATE, DEFAULT_OUTPUT_MODE, DEFAULT_BLOCK_COUNT, DEFAULT_BLOCK_SAMPLE);
+	} while (soundcard >= soundcards.size());
+	sound = new SoundcardHandler(soundcards[soundcard], DEFAULT_SAMPLE_RATE, DEFAULT_OUTPUT_MODE, DEFAULT_BLOCK_COUNT, DEFAULT_BLOCK_SAMPLE);
 	osc = new Oscillator();
 
 
