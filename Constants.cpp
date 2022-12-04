@@ -21,6 +21,7 @@ const double ADSR_RELEASE_TIME = 0.1;
 
 const double BASE_KEYBOARD_FREQUENCY = 261.63;
 const double BASE_MIDI_FREQUENCY = 8.1758;
+const short MAX_KEYBOARD_BUTTON_COUNT = 13;
 
 const int LPF_TAPS = 50;
 const double LPF_CUTOFF_FREQUENCY = 150.0;

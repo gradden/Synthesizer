@@ -79,29 +79,28 @@ void optionKeys() {
 void playOnKeyboard() {
 	cout << "Play now!";
 
-	bool pressed[16] = { false };
+	bool pressed[MAX_KEYBOARD_BUTTON_COUNT] = { false };
 
 	while (1) {
-		for (int i = 0; i < 13; i++) {
-			auto iterator = find_if(note.begin(), note.end(), [&i](const Note& obj) {return obj.noteId == i; });
+		for (short btnId = 0; btnId < MAX_KEYBOARD_BUTTON_COUNT; btnId++) {
+			auto iterator = find_if(note.begin(), note.end(), [&btnId](const Note& obj) {return obj.noteId == btnId; });
 
 			if (iterator == note.end()) {
-				if ((GetAsyncKeyState((char)"AWSEDFTGZHUJK"[i]) & 0x8000)) {
-					if (pressed[i] == false) {
+				if ((GetAsyncKeyState((char)"AWSEDFTGZHUJK"[btnId]) & 0x8000)) {
+					if (pressed[btnId] == false) {
 						Note n{};
-						n.noteId = i;
-						n.freq = BASE_KEYBOARD_FREQUENCY * pow(2.0, (double)i / 12.0);
+						n.noteId = btnId;
+						n.freq = BASE_KEYBOARD_FREQUENCY * pow(2.0, (double)btnId / 12.0);
 						n.active = true;
-						pressed[i] = true;
+						pressed[btnId] = true;
 						note.emplace_back(n);
 						osc->On(sound->getTime());
 					}
 				}
 			}
 			else {
-				cout << "\r";
-				if (!(GetAsyncKeyState((char)"AWSEDFTGZHUJK\xbcL\xbe\xbf"[i]) & 0x8000) && pressed[i]) {
-					pressed[i] = false;
+				if (!(GetAsyncKeyState((char)"AWSEDFTGZHUJK"[btnId]) & 0x8000) && pressed[btnId]) {
+					pressed[btnId] = false;
 					iterator->active = false;
 					osc->Off(sound->getTime());
 				}
@@ -116,7 +115,7 @@ void playOnKeyboard() {
 	}
 }
 
-void loadSoundMaker() {
+void loadSoftware() {
 	short num = 0;
 	std::cout << "Soundcards: " << endl;
 	for (auto d : devices) {
@@ -209,7 +208,7 @@ int main()
 	exit(0);
 	#endif
 
-	loadSoundMaker();
+	loadSoftware();
 	sound->setWave(wrapper);
 	std::cout << "\x1B[2J\x1B[H";
 

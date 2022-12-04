@@ -5,33 +5,9 @@ void CALLBACK MidiHandler::midiBridgeCallback(HMIDIIN hMidiIn, UINT wMsg, DWORD_
 }
 
 void MidiHandler::midiBridge(HMIDIIN hMidiIn, UINT wMsg, DWORD_PTR dwParam1, DWORD_PTR dwParam2) {
-	switch (wMsg) {
-	case MIM_OPEN:
-		printf("wMsg=MIDI Message channel has been opened.\n");
-		break;
-	case MIM_CLOSE:
-		printf("wMsg=MIDI Message channel has been closed.\n");
-		break;
-	case MIM_DATA:
+	if (wMsg != MIM_ERROR && wMsg != MIM_LONGERROR && wMsg == MIM_DATA) {
 		this->midiMsgKeyboardParser(dwParam1);
-		break;
-	case MIM_LONGDATA:
-		printf("wMsg=MIDI Message longdata received.\n");
-		break;
-	case MIM_ERROR:
-		printf("wMsg=MIDI Message error.\n");
-		break;
-	case MIM_LONGERROR:
-		printf("wMsg=MIDI Message long error.\n");
-		break;
-	case MIM_MOREDATA:
-		printf("wMsg=MIDI Message more data.\n");
-		break;
-	default:
-		printf("wMsg = Unknown\n");
-		break;
 	}
-	return;
 }
 
 void MidiHandler::initMidiDevice() {
