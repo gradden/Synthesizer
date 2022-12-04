@@ -58,7 +58,7 @@ private:
 	double customWave(double frequency, double time) {
 		double mix = 0.0;
 
-		mix = (2.0 / M_PI) * (frequency * M_PI * fmod(time, 1.0 / frequency) - (M_PI / 2.0));
+		mix = this->SawtoothWave(frequency, time) + this->SawtoothWave((frequency+1.0), time);
 
 		return mix;
 	}

@@ -33,7 +33,6 @@ double Oscillator::getEnvelope(double timeNow, bool on) {
 
 		if (on) {
 			if (this->isEnveloping) {
-
 				if (envelopeTimeWindow <= this->attackTime)
 				{
 					currentAmplitude = (envelopeTimeWindow / this->attackTime) * this->maxLevel;
@@ -87,7 +86,7 @@ double Oscillator::getReleaseForNote(double timeNow, double amplitude) {
 	return currentAmplitude;
 }
 
-void Oscillator::setEnvelope(bool isEnveloping, double maxLevel = 0.0, double A_time = 0.1, double D_time = 0.1, double S_level = 0.0, double R_time = 0.1) {
+void Oscillator::setEnvelope(bool isEnveloping, double maxLevel, double A_time, double D_time, double S_level, double R_time) {
 	this->isEnveloping = isEnveloping;
 	if (isEnveloping) {
 		this->maxLevel = maxLevel;

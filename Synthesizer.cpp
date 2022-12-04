@@ -89,7 +89,6 @@ void playOnKeyboard() {
 
 	while (1) {
 		for (int i = 0; i < 16; i++) {
-
 			auto iterator = find_if(note.begin(), note.end(), [&i](const Note& obj) {return obj.noteId == i; });
 
 			if (iterator == note.end()) {
@@ -99,7 +98,6 @@ void playOnKeyboard() {
 						n.noteId = i;
 						n.freq = BASE_KEYBOARD_FREQUENCY * pow(2.0, (double)i / 12.0);
 						n.active = true;
-						n.amplitude = osc->getAmplitude();
 
 						pressed[i] = true;
 						note.emplace_back(n);
@@ -113,8 +111,8 @@ void playOnKeyboard() {
 				if (!(GetAsyncKeyState((unsigned char)"AWSEDFTGZHUJK\xbcL\xbe\xbf"[i]) & 0x8000) && pressed[i]) {
 					pressed[i] = false;
 					iterator->active = false;
-					note.erase(iterator);
-				}	
+					osc->Off(sound->getTime());
+				}
 			}
 		}
 		cout << "\rFrequency base: " << osc->getFrequency()
@@ -141,7 +139,7 @@ void loadSoundMaker() {
 	osc = new Oscillator();
 
 
-	std::cout << "Oscillator types: \n 1 - Sine \n 2 - Triangle \n 3 - Square \n 4 - White Noise \n 5 - Sawtooth" << endl;
+	std::cout << "Oscillator types: \n 1 - Sine \n 2 - Triangle \n 3 - Square \n 4 - White Noise \n 5 - Sawtooth \n 6 - Two sawtooth with detune" << endl;
 	std::cout << "Oscillate this: " && cin >> oscillator_type;
 	if (oscillator_type == WHITE_NOISE) {
 		double min = osc->getWhiteNoiseMinFreq();
@@ -201,9 +199,13 @@ void loadSoundMaker() {
 double wrapper(double time) {
 	unique_lock<mutex> lm(muxNotes);
 	double MasterMix = 0.0;
+	
 
 	for (auto n : note) {
 		n.amplitude = osc->getEnvelope(sound->getTime(), n.active);
+		if (n.amplitude == 0.0 && n.active == false) {
+			note.erase(std::remove_if(begin(note), end(note), [&n](const Note& obj) {return obj.noteId == n.noteId; }));
+		}
 		MasterMix += osc->oscillate(time, n.freq, oscillator_type) * n.amplitude;
 	}
 

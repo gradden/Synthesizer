@@ -23,7 +23,7 @@ public:
 		this->blockSamples = blockSamples;
 		this->currentBlock = 0;
 		this->time = 0.0;
-		this->limitValue = 1.0;
+		this->limitValue = 5.0;
 		this->sampleSize = sizeof(short) * 8;
 		this->maxSample = pow(2, this->sampleSize - 1) - 1;
 		this->soundcards = this->getSoundcards();
