@@ -23,7 +23,6 @@ SoundcardHandler* sound;
 Oscillator* osc;
 vector<Note> note;
 MidiHandler* midihandler = new MidiHandler();
-mutex muxNotes;
 Filter* lowpass = new Filter(DEFAULT_SAMPLE_RATE, LPF_TAPS);
 
 void loadMidi() {
@@ -92,23 +91,21 @@ void playOnKeyboard() {
 			auto iterator = find_if(note.begin(), note.end(), [&i](const Note& obj) {return obj.noteId == i; });
 
 			if (iterator == note.end()) {
-				if ((GetAsyncKeyState((unsigned char)"AWSEDFTGZHUJK"[i]) & 0x8000)) {
+				if ((GetAsyncKeyState((char)"AWSEDFTGZHUJK"[i]) & 0x8000)) {
 					if (pressed[i] == false) {
 						Note n{};
 						n.noteId = i;
 						n.freq = BASE_KEYBOARD_FREQUENCY * pow(2.0, (double)i / 12.0);
 						n.active = true;
-
 						pressed[i] = true;
 						note.emplace_back(n);
-
 						osc->On(sound->getTime());
 					}
 				}
 			}
 			else {
 				cout << "\r";
-				if (!(GetAsyncKeyState((unsigned char)"AWSEDFTGZHUJK\xbcL\xbe\xbf"[i]) & 0x8000) && pressed[i]) {
+				if (!(GetAsyncKeyState((char)"AWSEDFTGZHUJK\xbcL\xbe\xbf"[i]) & 0x8000) && pressed[i]) {
 					pressed[i] = false;
 					iterator->active = false;
 					osc->Off(sound->getTime());
@@ -117,7 +114,7 @@ void playOnKeyboard() {
 		}
 		cout << "\rFrequency base: " << osc->getFrequency()
 			<< " Hz | Notes pressed at same time: " << note.size()
-			<< " | Current Amplitude: " << osc->getAmplitude();
+			<< " | Max Amplitude: " << osc->getAmplitude();
 			
 		optionKeys();
 		this_thread::sleep_for(5ms);
@@ -197,10 +194,8 @@ void loadSoundMaker() {
 }
 
 double wrapper(double time) {
-	unique_lock<mutex> lm(muxNotes);
 	double MasterMix = 0.0;
 	
-
 	for (auto n : note) {
 		n.amplitude = osc->getEnvelope(sound->getTime(), n.active);
 		if (n.amplitude == 0.0 && n.active == false) {

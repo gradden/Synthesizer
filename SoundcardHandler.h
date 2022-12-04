@@ -29,7 +29,8 @@ public:
 		this->soundcards = this->getSoundcards();
 		this->MemoryUnit = new short[blocks * blockSamples];
 		this->wavehdr = new WAVEHDR[blocks];
-		auto iterator = find(this->soundcards.begin(), this->soundcards.end(), selectedSoundcard);
+		std::vector<wstring>::iterator iterator = 
+			find(this->soundcards.begin(), this->soundcards.end(), selectedSoundcard);
 
 		ZeroMemory(this->MemoryUnit, (sizeof(this->MemoryUnit)));
 		ZeroMemory(this->wavehdr, (sizeof(WAVEHDR) * blocks));
@@ -58,20 +59,20 @@ public:
 	}
 
 	static vector<wstring> getSoundcards() {
-		vector<wstring> devices;
-		WAVEOUTCAPS waveoutcaps;
+		vector<wstring> cards;
+		WAVEOUTCAPS WOC;
 
 		for (int i = 0; i < waveOutGetNumDevs(); i++) {
 			try {
-				waveOutGetDevCaps(i, &waveoutcaps, sizeof(WAVEOUTCAPS));
-				devices.push_back(waveoutcaps.szPname);
+				waveOutGetDevCaps(i, &WOC, sizeof(WAVEOUTCAPS));
+				cards.push_back(WOC.szPname);
 			}
 			catch (std::exception e) {
 				throw exception("Cannot get the list of soundcards");
 			}
 		}
 
-		return devices;
+		return cards;
 	}
 
 	void setWave(double(wave)(double)) {
@@ -84,7 +85,7 @@ public:
 
 
 private:
-	HWAVEOUT hwaveout;
+	HWAVEOUT waveOutputVar;
 	thread SoundCardThread;
 	short* MemoryUnit;
 	WAVEHDR* wavehdr;
@@ -114,8 +115,8 @@ private:
 		wfx.nAvgBytesPerSec = this->sampleRate * wfx.nBlockAlign;
 
 		try {
-			waveOutOpen(&this->hwaveout, soundcardId, &wfx, (DWORD_PTR)waveOutWrapper, (DWORD_PTR)this, CALLBACK_FUNCTION);
-		} 
+			waveOutOpen(&this->waveOutputVar, soundcardId, &wfx, (DWORD_PTR)waveBridgeCallback, (DWORD_PTR)this, CALLBACK_FUNCTION);
+		}
 		catch (std::exception e) {
 			return false;
 		}
@@ -134,13 +135,13 @@ private:
 					this->freeBlocks -= 1;
 
 					if (this->wavehdr[this->currentBlock].dwFlags & WHDR_PREPARED) {
-						waveOutUnprepareHeader(this->hwaveout, &this->wavehdr[this->currentBlock], sizeof(WAVEHDR));
+						waveOutUnprepareHeader(this->waveOutputVar, &this->wavehdr[this->currentBlock], sizeof(WAVEHDR));
 					}
 
 					this->fillAudioData();
 
-					waveOutPrepareHeader(this->hwaveout, &this->wavehdr[this->currentBlock], sizeof(WAVEHDR));
-					waveOutWrite(this->hwaveout, &this->wavehdr[this->currentBlock], sizeof(WAVEHDR));
+					waveOutPrepareHeader(this->waveOutputVar, &this->wavehdr[this->currentBlock], sizeof(WAVEHDR));
+					waveOutWrite(this->waveOutputVar, &this->wavehdr[this->currentBlock], sizeof(WAVEHDR));
 					this->currentBlock = (this->currentBlock + 1) % this->blocks;
 				}
 				catch (std::exception e) {
@@ -151,7 +152,7 @@ private:
 		}
 	}
 
-	void waveOutCallback(HWAVEOUT hWaveOut, UINT uMsg, DWORD dwParam1, DWORD dwParam2) {
+	void waveBridge(HWAVEOUT hWaveOut, UINT uMsg, DWORD dwParam1, DWORD dwParam2) {
 		if (uMsg == WOM_DONE) {
 			this->freeBlocks++;
 			unique_lock<mutex> lm(this->blockMutex);
@@ -159,8 +160,8 @@ private:
 		}
 	}
 
-	static void CALLBACK waveOutWrapper(HWAVEOUT hWaveOut, UINT uMsg, DWORD dwInstance, DWORD dwParam1, DWORD dwParam2) {
-		((SoundcardHandler*)dwInstance)->waveOutCallback(hWaveOut, uMsg, dwParam1, dwParam2);
+	static void CALLBACK waveBridgeCallback(HWAVEOUT hWaveOut, UINT uMsg, DWORD dwInstance, DWORD dwParam1, DWORD dwParam2) {
+		((SoundcardHandler*)dwInstance)->waveBridge(hWaveOut, uMsg, dwParam1, dwParam2);
 	}
 
 	double brickwallLimiter(double sample) {

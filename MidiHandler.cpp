@@ -1,10 +1,10 @@
 #include "MidiHandler.h"
 
-void CALLBACK MidiHandler::midiInputCallback(HMIDIIN hMidiIn, UINT wMsg, DWORD_PTR dwInstance, DWORD_PTR dwParam1, DWORD_PTR dwParam2) {
-	((MidiHandler*)dwInstance)->midiWrapper(hMidiIn, wMsg, dwParam1, dwParam2);
+void CALLBACK MidiHandler::midiBridgeCallback(HMIDIIN hMidiIn, UINT wMsg, DWORD_PTR dwInstance, DWORD_PTR dwParam1, DWORD_PTR dwParam2) {
+	((MidiHandler*)dwInstance)->midiBridge(hMidiIn, wMsg, dwParam1, dwParam2);
 }
 
-void MidiHandler::midiWrapper(HMIDIIN hMidiIn, UINT wMsg, DWORD_PTR dwParam1, DWORD_PTR dwParam2) {
+void MidiHandler::midiBridge(HMIDIIN hMidiIn, UINT wMsg, DWORD_PTR dwParam1, DWORD_PTR dwParam2) {
 	switch (wMsg) {
 	case MIM_OPEN:
 		printf("wMsg=MIDI Message channel has been opened.\n");
@@ -48,7 +48,7 @@ void MidiHandler::initMidiDevice() {
 	cout << "Choose MIDI Device:" && cin >> DeviceID;
 
 	LPHMIDIIN device = new HMIDIIN[MidiDevicesCount];
-	if (midiInOpen(&device[DeviceID], DeviceID, (DWORD_PTR)midiInputCallback, (DWORD_PTR)this, CALLBACK_FUNCTION) == S_OK) {
+	if (midiInOpen(&device[DeviceID], DeviceID, (DWORD_PTR)midiBridgeCallback, (DWORD_PTR)this, CALLBACK_FUNCTION) == S_OK) {
 		cout << "Connected to " << DeviceID << ". MIDI device!" << endl;
 		midiInStart(device[DeviceID]); 
 	}
