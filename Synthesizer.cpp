@@ -49,6 +49,8 @@ void loadMidi() {
 		if (!midihandler->getKeyPressedState() && notesArray[midihandler->getNote()] == true) {
 			notesArray[midihandler->getNote()] = false;
 			int noteId = midihandler->getNote();
+			auto iterator = find_if(note.begin(), note.end(), [&noteId](const Note& obj) {return obj.noteId == noteId; });
+			iterator->active = false;
 			osc->Off(sound->getTime());
 			
 			bool allEmpty = true;
