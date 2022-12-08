@@ -123,7 +123,7 @@ double Oscillator::getFrequency() {
 	return this->frequency;
 }
 
-double Oscillator::oscillate(double time, double frequency, int osc) {
+double Oscillator::oscillate(double time, double frequency, int osc, double density) {
 	switch (osc)
 	{
 	default:
@@ -142,7 +142,7 @@ double Oscillator::oscillate(double time, double frequency, int osc) {
 		return WhiteNoise(time, this->whiteNoiseMinFreq, this->whiteNoiseMaxFreq);
 		break;
 	case 5:
-		return SawtoothWave(frequency, time);
+		return SawtoothWave(frequency, time, density);
 		break;
 	case 6:
 		return customWave(frequency, time);

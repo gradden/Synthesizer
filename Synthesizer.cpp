@@ -197,7 +197,7 @@ double wrapper(double time) {
 		if (n.amplitude == 0.0 && n.active == false) {
 			note.erase(std::remove_if(begin(note), end(note), [&n](const Note& obj) {return obj.noteId == n.noteId; }));
 		}
-		MasterMix += osc->oscillate(time, n.freq, oscillator_type) * n.amplitude;
+		MasterMix += osc->oscillate(time, n.freq, oscillator_type, SAWTOOTH_DENSITY) * n.amplitude;
 	}
 
 	return filterEnabled ? lowpass->filter(MasterMix) : MasterMix;

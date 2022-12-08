@@ -45,10 +45,10 @@ private:
 		return SineWave((min + r * (max-min)), time);
 	}
 
-	double SawtoothWave(double frequency, double time) {
+	double SawtoothWave(double frequency, double time, double density) {
 		double mix = 0.0;
 
-		for (double i = 1.0; i < 100.0; i++) {
+		for (double i = 1.0; i < density; i++) {
 			mix += (sin(i * 2.0 * M_PI * frequency * time)) / i;
 		}
 
@@ -58,7 +58,7 @@ private:
 	double customWave(double frequency, double time) {
 		double mix = 0.0;
 
-		mix = this->SawtoothWave(frequency, time) + this->SawtoothWave((frequency+1.0), time);
+		mix = this->SawtoothWave(frequency, time, 100.0) + this->SawtoothWave((frequency+1.0), time, 100.0);
 
 		return mix;
 	}
@@ -87,5 +87,5 @@ public:
 	double getWhiteNoiseMinFreq();
 	double getWhiteNoiseMaxFreq();
 
-	double oscillate(double time, double frequency, int osc);
+	double oscillate(double time, double frequency, int osc, double density);
 };

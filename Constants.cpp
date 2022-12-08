@@ -3,6 +3,7 @@ const short TRIANGLE_WAVE = 2;
 const short SQUARE_WAVE = 3;
 const short WHITE_NOISE = 4;
 const short SAWTOOTH_WAVE = 5;
+const double SAWTOOTH_DENSITY = 100.0;
 
 const short PLAYMODE_KEYBOARD = 1;
 const short PLAYMODE_MIDI = 2;
