@@ -18,7 +18,6 @@ private:
 
         double cutoff = this->cutoffFrequency / this->sampleRate;
         int a = this->taps / 2;
-        cout << a << endl;
         for (int i = -a; i < a; i++) {
             if (i == 0) {
                 filterCoeff[a] = 2 * cutoff;
